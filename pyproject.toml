@@ -33,7 +33,7 @@ dev = [
     "pre-commit",
     "mypy",
     # Documentation
-    "documenteer[guide]<1",
+    "documenteer[guide]<2",
     "scriv",
 ]
 
