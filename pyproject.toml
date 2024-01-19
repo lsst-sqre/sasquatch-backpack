@@ -1,6 +1,6 @@
 [project]
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
-name = "sasquatch-backpack"
+name = "sasquatchbackpack"
 description = "Collects data and feeds sasquatch."
 license = {file = "LICENSE"}
 readme= "README.md"
