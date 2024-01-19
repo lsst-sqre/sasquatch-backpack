@@ -3,7 +3,7 @@ title = "sasquatch-backpack"
 copyright = "2024 Association of Universities for Research in Astronomy, Inc. (AURA)"
 
 [project.python]
-package = "sasquatch-backpack"
+package = "sasquatchbackpack"
 
 [sphinx]
 rst_epilog_file = "_rst_epilog.rst"
