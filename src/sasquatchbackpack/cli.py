@@ -5,7 +5,13 @@ import click
 from sasquatchbackpack.scripts import usgs
 
 
-@click.command
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+@click.version_option(message="%(version)s")
+def main() -> None:
+    """Administrative command-line interface for sasquatchbackpack."""
+
+
+@main.command()
 @click.option(
     "-d",
     "--duration",
@@ -20,6 +26,7 @@ from sasquatchbackpack.scripts import usgs
     help="radius of search from central coordinates in km.",
     default=400,
     type=int,
+    show_default=True,
 )
 @click.option(
     "-c",
@@ -29,6 +36,7 @@ from sasquatchbackpack.scripts import usgs
             of Cerro Pachon.",
     default=(-30.22573200864174, -70.73932987127506),
     type=(float, float),
+    show_default=True,
 )
 @click.option(
     "-mm",
@@ -36,6 +44,7 @@ from sasquatchbackpack.scripts import usgs
     help="minimum earthquake magnitude.",
     default=2,
     type=int,
+    show_default=True,
 )
 @click.option(
     "-xm",
@@ -43,6 +52,7 @@ from sasquatchbackpack.scripts import usgs
     help="maximum earthquake magnitude.",
     default=10,
     type=int,
+    show_default=True,
 )
 def search_usgs(
     duration: tuple[int, int],
@@ -63,7 +73,3 @@ def search_usgs(
     )
     for result in results:
         print(result)
-
-
-if __name__ == "__main__":
-    search_usgs()

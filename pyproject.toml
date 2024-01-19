@@ -24,6 +24,9 @@ requires-python = "<3.11, >=3.7"
 dependencies = ["usgs-libcomcat"]
 dynamic = ["version"]
 
+[project.scripts]
+sasquatchbackpack = "sasquatchbackpack.cli:main"
+
 [project.optional-dependencies]
 dev = [
     # Testing

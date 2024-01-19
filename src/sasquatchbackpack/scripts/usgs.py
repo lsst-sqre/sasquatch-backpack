@@ -40,10 +40,3 @@ def search_api(
     )
 
     return km_radius_events
-
-
-if __name__ == "__main__":
-    events = search_api(timedelta(days=30))
-
-    for event in events:
-        print(event)
