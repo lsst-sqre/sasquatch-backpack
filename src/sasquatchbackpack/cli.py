@@ -65,6 +65,18 @@ def usgs_earthquake_data(
     to console
     """
     issues = []
+    total_duration = timedelta(duration[0], 0, 0, 0, 0, duration[1], 0)
+
+    if total_duration > timedelta(10000, 0, 0, 0, 0, 0, 0):
+        issues.append(
+            f"Your provided duration ({str(total_duration)}) is too "
+            + "large. The maximum is 10000 days."
+        )
+    elif total_duration < timedelta(0, 0, 0, 0, 0, 1, 0):
+        issues.append(
+            f"Your provided duration ({str(total_duration)}) is too "
+            + "small. The minimum is 1 hour."
+        )
 
     if radius > 5000:
         issues.append(
@@ -107,7 +119,7 @@ def usgs_earthquake_data(
     elif min_magnitude > 10:
         issues.append(
             f"Your provided minimum magnitude ({min_magnitude}) is too"
-            + "large. The maximum is 10."
+            + " large. The maximum is 10."
         )
 
     if max_magnitude > 10:
@@ -124,28 +136,23 @@ def usgs_earthquake_data(
     if min_magnitude > max_magnitude:
         issues.append(
             f"Your provided minimum magnitude ({min_magnitude}) cannot"
-            + " excede your provided maximum magnitude ({max_magnitude})."
+            + f" excede your provided maximum magnitude ({max_magnitude})."
         )
 
     if len(issues) > 0:
         click.secho(
-            "Command Failed! One or more provided parameters is \
-            incorrect.\n",
+            "Command Failed! One or more provided parameters is"
+            + "incorrect.\n",
             fg="red",
         )
-        if len(issues) == 1:
-            click.echo("ISSUE\n------")
-            click.echo(issues[0])
-            click.echo("------")
-        else:
-            click.echo("ISSUES\n------")
-            for issue in issues:
-                click.echo(issue)
-            click.echo("------")
+        click.echo("FAILURE\n------")
+        for issue in issues:
+            click.echo(issue)
+        click.echo("------")
         return
 
     results = usgs.search_api(
-        timedelta(duration[0], 0, 0, 0, 0, duration[1], 0),
+        total_duration,
         radius,
         coords,
         min_magnitude,
@@ -159,7 +166,10 @@ def usgs_earthquake_data(
             click.echo(result)
         click.echo("------")
     else:
+        click.secho("SUCCESS", fg="orange")
+        click.echo("------")
         click.echo("No results found for the provided criteria :(")
+        click.echo("------")
 
 
 if __name__ == "__main__":
