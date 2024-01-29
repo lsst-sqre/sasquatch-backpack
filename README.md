@@ -1,6 +1,6 @@
 # sasquatch-backpack
 
-Collects data and feeds sasquatch.
+Sasquatch-backpack is a collection of APIs that feed into sasquatch.
 Learn more at https://sasquatch-backpack.lsst.io
 
 Install from PyPI:

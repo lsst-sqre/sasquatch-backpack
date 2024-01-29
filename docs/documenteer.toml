@@ -11,6 +11,7 @@ disable_primary_sidebars = [
     "index",
     "changelog",
 ]
+extensions = ['sphinx_click']
 
 [sphinx.intersphinx.projects]
 python = "https://docs.python.org/3/"

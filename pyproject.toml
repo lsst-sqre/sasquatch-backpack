@@ -1,7 +1,7 @@
 [project]
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
 name = "sasquatchbackpack"
-description = "Collects data and feeds sasquatch."
+description = "Sasquatch-backpack is a collection of APIs that feed into sasquatch."
 license = {file = "LICENSE"}
 readme= "README.md"
 keywords = [
@@ -38,6 +38,7 @@ dev = [
     # Documentation
     "documenteer[guide]<2",
     "scriv",
+    "sphinx_click",
 ]
 
 [project.urls]
