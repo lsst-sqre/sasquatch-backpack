@@ -27,7 +27,7 @@ def search_api(
         max_magnitude (int, optional): maximum earthquake magnitude.
             Defaults to 10.
     """
-    current_dt = datetime.now()
+    current_dt = datetime.utcnow()
 
     km_radius_events = search(
         starttime=current_dt - duration,
