@@ -7,8 +7,7 @@ def search_api(
     duration: timedelta,
     radius: int = 400,
     coords: tuple[float, float] = (-30.22573200864174, -70.73932987127506),
-    min_magnitude: int = 2,
-    max_magnitude: int = 10,
+    magnitude_bounds: tuple[int, int] = (2, 10),
 ) -> list:
     """Seaches USGS databases for relevant earthquake data.
 
@@ -35,8 +34,8 @@ def search_api(
         maxradiuskm=radius,
         latitude=coords[0],
         longitude=coords[1],
-        minmagnitude=min_magnitude,
-        maxmagnitude=max_magnitude,
+        minmagnitude=magnitude_bounds[0],
+        maxmagnitude=magnitude_bounds[1],
     )
 
     return km_radius_events

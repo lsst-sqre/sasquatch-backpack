@@ -79,33 +79,36 @@ def check_coords(
     return value
 
 
-def check_min_magnitude(ctx: click.Context, param: dict, value: int) -> int:
-    """Validate minimum magnitude"""
-    if value < 0:
+def check_magnitude_bounds(
+    ctx: click.Context, param: dict, value: tuple[int, int]
+) -> tuple[int, int]:
+    """Validate magnitude bounds"""
+    if value[0] < 0:
         raise click.BadParameter(
-            f"""Your provided minimum magnitude ({value}) is
+            f"""Your provided minimum magnitude ({value[0]}) is
  too small. The minimum is 0."""
         )
-    elif value > 10:
+    elif value[0] > 10:
         raise click.BadParameter(
-            f"""Your provided minimum magnitude ({value}) is
+            f"""Your provided minimum magnitude ({value[0]}) is
  too large. The maximum is 10."""
         )
 
-    return value
-
-
-def check_max_magnitude(ctx: click.Context, param: dict, value: int) -> int:
-    """Validate maximum magnitude"""
-    if value > 10:
+    if value[1] > 10:
         raise click.BadParameter(
-            f"""Your provided maximum magnitude ({value}) is
+            f"""Your provided maximum magnitude ({value[1]}) is
  too large. The maximum is 10."""
         )
-    elif value < 0:
+    elif value[1] < 0:
         raise click.BadParameter(
-            f"""Your provided maximum magnitude ({value}) is
+            f"""Your provided maximum magnitude ({value[1]}) is
  too small. The minimum is 0."""
+        )
+
+    if value[0] > value[1]:
+        raise click.BadParameter(
+            f"""Your provided minimum magnitude ({value[0]})
+cannot excede your provided maximum magnitude ({value[1]})."""
         )
 
     return value
@@ -121,8 +124,7 @@ def main() -> None:
 @click.option(
     "-d",
     "--duration",
-    help="How far back from the present should be searched in days,"
-    + " then hours.",
+    help="How far back from the present should be searched" + " (days, hours)",
     required=True,
     type=(int, int),
     callback=check_duration,
@@ -139,56 +141,39 @@ def main() -> None:
 @click.option(
     "-c",
     "--coords",
-    help="latitude and longitude of the central coordnates. Latitude"
-    + " is first and Longitude is second. Defaults to the"
-    + " coordinates of Cerro Pachon.",
+    help="latitude and longitude of the central coordnates"
+    + " (latitude, longitude). Defaults to the coordinates of"
+    + " Cerro Pachon.",
     default=coords_default,
     type=(float, float),
     show_default=True,
     callback=check_coords,
 )
 @click.option(
-    "-mm",
-    "--min-magnitude",
-    help="minimum earthquake magnitude.",
-    default=magnitude_bounds[0],
-    type=int,
+    "-m",
+    "--magnitude-bounds",
+    help="upper and lower bounds (lower, upper)",
+    default=magnitude_bounds,
+    type=(int, int),
     show_default=True,
-    callback=check_min_magnitude,
-)
-@click.option(
-    "-xm",
-    "--max-magnitude",
-    help="maximum earthquake magnitude.",
-    default=magnitude_bounds[1],
-    type=int,
-    show_default=True,
-    callback=check_max_magnitude,
+    callback=check_magnitude_bounds,
 )
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
-    min_magnitude: int,
-    max_magnitude: int,
+    magnitude_bounds: tuple[int, int],
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
     to console
     """
-    if min_magnitude > max_magnitude:
-        raise click.BadParameter(
-            f"""Your provided minimum magnitude ({min_magnitude})
-cannot excede your provided maximum magnitude ({max_magnitude})."""
-        )
-
     total_duration = timedelta(duration[0], 0, 0, 0, 0, duration[1], 0)
 
     results = usgs.search_api(
         total_duration,
         radius,
         coords,
-        min_magnitude,
-        max_magnitude,
+        magnitude_bounds,
     )
 
     if len(results) > 0:
@@ -202,3 +187,7 @@ cannot excede your provided maximum magnitude ({max_magnitude})."""
         click.echo("------")
         click.echo("No results found for the provided criteria :(")
         click.echo("------")
+
+
+if __name__ == "__main__":
+    main()
