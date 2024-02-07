@@ -1,7 +1,7 @@
 [project]
 # https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
 name = "sasquatchbackpack"
-description = "Collects data and feeds sasquatch."
+description = "Sasquatch-backpack is a collection of APIs that feed into sasquatch."
 license = {file = "LICENSE"}
 readme= "README.md"
 keywords = [
@@ -14,15 +14,18 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.10",
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Operating System :: POSIX",
     "Typing :: Typed",
 ]
-requires-python = ">=3.11"
-dependencies = []
+requires-python = "<3.11, >=3.7"
+dependencies = ["usgs-libcomcat"]
 dynamic = ["version"]
+
+[project.scripts]
+sasquatchbackpack = "sasquatchbackpack.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -35,6 +38,7 @@ dev = [
     # Documentation
     "documenteer[guide]<2",
     "scriv",
+    "sphinx_click",
 ]
 
 [project.urls]

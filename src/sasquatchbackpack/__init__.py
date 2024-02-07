@@ -1,4 +1,4 @@
-"""Collects data and feeds sasquatch."""
+"""Sasquatch-backpack is a collection of APIs that feed into sasquatch."""
 
 __all__ = ["__version__"]
 
