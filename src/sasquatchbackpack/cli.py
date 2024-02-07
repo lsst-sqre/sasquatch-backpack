@@ -4,14 +4,11 @@ import click
 
 from sasquatchbackpack.scripts import usgs
 
-global radius_default
-radius_default = 400
+DEFAULT_RADIUS = 400
 
-global coords_default
-coords_default = (-30.22573200864174, -70.73932987127506)
+DEFAULT_COORDS = (-30.22573200864174, -70.73932987127506)
 
-global magnitude_bounds
-magnitude_bounds = (2, 10)
+DEFAULT_MAGNITUDE_BOUNDS = (2, 10)
 
 
 def check_duration(
@@ -133,7 +130,7 @@ def main() -> None:
     "-r",
     "--radius",
     help="radius of search from central coordinates in km.",
-    default=radius_default,
+    default=DEFAULT_RADIUS,
     type=int,
     show_default=True,
     callback=check_radius,
@@ -144,7 +141,7 @@ def main() -> None:
     help="latitude and longitude of the central coordnates"
     + " (latitude, longitude). Defaults to the coordinates of"
     + " Cerro Pachon.",
-    default=coords_default,
+    default=DEFAULT_COORDS,
     type=(float, float),
     show_default=True,
     callback=check_coords,
@@ -153,7 +150,7 @@ def main() -> None:
     "-m",
     "--magnitude-bounds",
     help="upper and lower bounds (lower, upper)",
-    default=magnitude_bounds,
+    default=DEFAULT_MAGNITUDE_BOUNDS,
     type=(int, int),
     show_default=True,
     callback=check_magnitude_bounds,
