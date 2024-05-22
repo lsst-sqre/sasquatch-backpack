@@ -1,0 +1,30 @@
+{
+    "namespace": "lsst.example",
+    "type": "record",
+    "name": "usgs-earthquake-data",
+    "description": "Collection of earthquakes near the summit",
+    "fields": [
+        {
+            "name": "timestamp",
+            "type": "long"
+        },
+        {
+            "name": "latitude",
+            "type": "float"
+        },
+        {
+            "name": "longitude",
+            "type": "float"
+        },
+        {
+            "name": "distance",
+            "type": "float",
+            "description": "Distance from the summit",
+            "units": "Km"
+        },
+        {
+            "name": "magnitude",
+            "type": "float"
+        }
+    ]
+}
