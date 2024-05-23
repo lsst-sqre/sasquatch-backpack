@@ -1,0 +1,14 @@
+{
+    "namespace": "$namespace",
+    "type": "record",
+    "name": "$topic_name",
+    "description": "Collection of earthquakes near the summit",
+    "fields": [
+        {"name": "timestamp", "type": "long"},
+        {"name": "id", "type": "str"},
+        {"name": "latitude", "type": "float"},
+        {"name": "longitude", "type": "float"},
+        {"name": "depth", "type": "float", "units": "Km"},
+        {"name": "magnitude", "type": "float"}
+    ]
+}

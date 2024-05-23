@@ -1,5 +1,5 @@
-import json
 from datetime import timedelta
+from string import Template
 
 import click
 
@@ -205,25 +205,11 @@ def usgs_earthquake_data(
         #     "https://data-int.lsst.cloud/sasquatch-rest-proxy"
         # )
 
-        namespace = "lsst.example"
-        topic_name = "usgs-earthquake-data"
+        with open("src/sasquatchbackpack/schemas/usgs.avsc", "r") as file:
+            template = Template(file.read())
 
-        value_schema = json.dumps(
-            {
-                "namespace": f"{namespace}",
-                "type": "record",
-                "name": f"{topic_name}",
-                "description": "Collection of earthquakes near the "
-                + "summit",
-                "fields": [
-                    {"name": "timestamp", "type": "long"},
-                    {"name": "id", "type": "str"},
-                    {"name": "latitude", "type": "float"},
-                    {"name": "longitude", "type": "float"},
-                    {"name": "depth", "type": "float", "units": "Km"},
-                    {"name": "magnitude", "type": "float"},
-                ],
-            }
+        value_schema = template.substitute(
+            {"namespace": "lsst.example", "topic_name": "usgs-earthquake-data"}
         )
 
         # url = f"{sasquatch_rest_proxy_url}/topics/{namespace}.{topic_name}"
