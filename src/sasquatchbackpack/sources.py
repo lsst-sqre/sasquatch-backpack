@@ -22,25 +22,25 @@ class data_source:
         self.namespace = namespace
         self.topic_name = topic_name
         self.schema_directory = schema_directory
-        self.results = []
+        self.results: list = []
 
-    def set_new_payload_values(self):
+    def set_new_payload_values(self) -> None:
         """Template method that should allow alteration of provided
         parameters then rebuild results
         """
-        pass
+        return
 
-    def build_results(self):
+    def build_results(self) -> None:
         """Template method that should create a dataset based off the
         current provided parameters and update results.
         """
-        pass
+        return
 
-    def get_records(self):
+    def get_records(self) -> list:
         """Template method that should assemble a payload based off
         built results
         """
-        pass
+        return []
 
     def get_results(self) -> list:
         """Gives access to most recent result list
@@ -109,11 +109,11 @@ class usgs_source(data_source):
 
     def set_new_payload_values(
         self,
-        new_duration: timedelta = None,
-        new_radius: int = None,
-        new_coords: tuple[float, float] = None,
-        new_magnitude_bounds: tuple[int, int] = None,
-    ):
+        new_duration: timedelta = timedelta(0, 0, 1, 0, 0, 0, 0),
+        new_radius: int = -1,
+        new_coords: tuple[float, float] = (1000.0, 1000.0),
+        new_magnitude_bounds: tuple[int, int] = (0, 0),
+    ) -> None:
         """Alters payload values then rebuilds results using new values
 
         Parameters
@@ -129,18 +129,18 @@ class usgs_source(data_source):
             upper and lower bounds for magnitude search
             (lower, upper), optional
         """
-        if new_duration is not None:
+        if new_duration is not timedelta(0, 0, 1, 0, 0, 0, 0):
             self.duration = new_duration
-        if new_radius is not None:
+        if new_radius is not -1:
             self.radius = new_radius
-        if new_coords is not None:
+        if new_coords != (1000.0, 1000.0):
             self.coords = new_coords
-        if new_magnitude_bounds is not None:
+        if new_magnitude_bounds != (0, 0):
             self.magnitude_bounds = new_magnitude_bounds
 
         self.build_results()
 
-    def build_results(self):
+    def build_results(self) -> None:
         """Query the USGS API using the current provided parameters,
         then update results.
         """

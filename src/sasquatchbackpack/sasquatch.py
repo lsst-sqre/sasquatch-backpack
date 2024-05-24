@@ -60,7 +60,7 @@ class sasquatch_deploy:
         )
         return response.text
 
-    def send_data(self) -> str:
+    def send_data(self) -> dict:
         """Assemble schema and payload, then make a POST request to kafka
 
         Returns
