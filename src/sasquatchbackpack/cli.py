@@ -1,5 +1,4 @@
 from datetime import timedelta
-from string import Template
 
 import click
 
@@ -158,20 +157,11 @@ def main() -> None:
     show_default=True,
     callback=check_magnitude_bounds,
 )
-@click.option(
-    "-t",
-    "--test",
-    help="set to True to echo API results without sending them",
-    default=DEFAULT_TEST,
-    type=bool,
-    show_default=True,
-)
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
-    test: bool,
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
     to console
@@ -196,56 +186,6 @@ def usgs_earthquake_data(
         click.echo("------")
         click.echo("No results found for the provided criteria :(")
         click.echo("------")
-        return
-
-    if not test:
-        click.echo("Sending data...")
-
-        # sasquatch_rest_proxy_url = (
-        #     "https://data-int.lsst.cloud/sasquatch-rest-proxy"
-        # )
-
-        with open("src/sasquatchbackpack/schemas/usgs.avsc", "r") as file:
-            template = Template(file.read())
-
-        value_schema = template.substitute(
-            {"namespace": "lsst.example", "topic_name": "usgs-earthquake-data"}
-        )
-
-        # url = f"{sasquatch_rest_proxy_url}/topics/{namespace}.{topic_name}"
-
-        # headers = {
-        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
-        #     "Accept": "application/vnd.kafka.v2+json",
-        # }
-
-        records = []
-
-        for result in results:
-            records.append(
-                {
-                    "value": {
-                        "timestamp": result.time.strftime("%s"),
-                        "id": result.id,
-                        "latitude": result.latitude,
-                        "longitude": result.longitude,
-                        "depth": float(result.depth),
-                        "magnitude": float(result.magnitude),
-                    }
-                }
-            )
-
-        payload = {"value_schema": value_schema, "records": records}
-
-        print(payload)
-
-        # response = requests.request("POST",
-        #                             url,
-        #                             json=payload,
-        #                             headers=headers
-        #                             )
-
-        # print(response.text)
 
 
 if __name__ == "__main__":
