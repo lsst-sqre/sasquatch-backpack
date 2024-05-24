@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import click
 
-from sasquatchbackpack.scripts import usgs
+from sasquatchbackpack import sasquatch, sources
 
 DEFAULT_RADIUS = 400
 
@@ -157,23 +157,31 @@ def main() -> None:
     show_default=True,
     callback=check_magnitude_bounds,
 )
+@click.option(
+    "-t",
+    "--test",
+    help="set to True to echo API results without sending them",
+    default=DEFAULT_TEST,
+    type=bool,
+    show_default=True,
+)
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
+    test: bool,
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
     to console
     """
     total_duration = timedelta(duration[0], 0, 0, 0, 0, duration[1], 0)
 
-    results = usgs.search_api(
-        total_duration,
-        radius,
-        coords,
-        magnitude_bounds,
+    source = sources.usgs_source(
+        total_duration, radius, coords, magnitude_bounds
     )
+
+    results = source.get_results()
 
     if len(results) > 0:
         click.secho("SUCCESS!", fg="green")
@@ -186,6 +194,14 @@ def usgs_earthquake_data(
         click.echo("------")
         click.echo("No results found for the provided criteria :(")
         click.echo("------")
+        return
+
+    if not test:
+        click.echo("Sending data...")
+
+        poster = sasquatch.sasquatch_deploy(source)
+
+        click.echo(poster.send_data())
 
 
 if __name__ == "__main__":

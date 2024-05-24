@@ -1,22 +1,34 @@
-# from datetime import timedelta
 from string import Template
 
 import requests
 
-# from sasquatchbackpack.scripts import *
+from sasquatchbackpack import sources
+
+# Code yoinked from https://github.com/lsst-sqre/
+# sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
 
-class sasquatchdeploy:
-    """help"""
+class sasquatch_deploy:
+    """A class to send backpack data to kafka.
 
-    def __init__(self, namespace: str, topic_name: str):
-        self._namespace = namespace
-        self._topic_name = topic_name
+    Parameters
+    ----------
+    source
+        data_source containing the payload and other important,
+        individulized data
+    """
 
-    def build_payload(self) -> list:
-        return []
+    def __init__(self, source: sources.data_source):
+        self.source = source
 
     def create_kafka_topic(self) -> str:
+        """Creates kafka topic based off data from provided source
+
+        Returns
+        -------
+        response text
+            The results of the POST request in string format
+        """
         sasquatch_rest_proxy_url = (
             "https://data-int.lsst.cloud/sasquatch-rest-proxy"
         )
@@ -30,10 +42,11 @@ class sasquatchdeploy:
         cluster_id = r.json()["data"][0]["cluster_id"]
 
         # The topic is created with one partition and a replication
-        # factor of 3 by default, this configuration is fixed for the '
+        # factor of 3 by default, this configuration is fixed for the
         # Sasquatch Kafka cluster.
         topic_config = {
-            "topic_name": f"{self._namespace}.{self._topic_name}",
+            "topic_name": f"{self.source.namespace}."
+            + f"{self.source.topic_name}",
             "partitions_count": 1,
             "replication_factor": 3,
         }
@@ -47,48 +60,48 @@ class sasquatchdeploy:
         )
         return response.text
 
-    def send_data(self):
-        sasquatch_rest_proxy_url = (
-            "https://data-int.lsst.cloud/sasquatch-rest-proxy"
-        )
+    def send_data(self) -> str:
+        """Assemble schema and payload, then make a POST request to kafka
 
-        with open("src/sasquatchbackpack/schemas/usgs.avsc", "r") as file:
+        Returns
+        -------
+        response text
+            The results of the POST request in string format
+        """
+        with open(self.source.schema_directory, "r") as file:
             template = Template(file.read())
 
         value_schema = template.substitute(
-            {"namespace": "lsst.example", "topic_name": "usgs-earthquake-data"}
+            {
+                "namespace": self.source.namespace,
+                "topic_name": self.source.topic_name,
+            }
         )
 
-        url = f"{sasquatch_rest_proxy_url}/topics/"
-        +"{self._namespace}.{self._topic_name}"
+        # Currently unused, TODO: Uncomment when POSTing begins
 
-        headers = {
-            "Content-Type": "application/vnd.kafka.avro.v2+json",
-            "Accept": "application/vnd.kafka.v2+json",
-        }
+        # url = f"{sasquatch_rest_proxy_url}/topics/"
+        #       + f"{self.source.namespace}.{self.source.topic_name}"
+        # headers = {
+        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
+        #     "Accept": "application/vnd.kafka.v2+json",
+        # }
+        # sasquatch_rest_proxy_url = (
+        #     "https://data-int.lsst.cloud/sasquatch-rest-proxy"
+        # )
 
-        results = self.build_payload()
-
-        records = []
-
-        for result in results:
-            records.append(
-                {
-                    "value": {
-                        "timestamp": result.time.strftime("%s"),
-                        "id": result.id,
-                        "latitude": result.latitude,
-                        "longitude": result.longitude,
-                        "depth": float(result.depth),
-                        "magnitude": float(result.magnitude),
-                    }
-                }
-            )
+        records = self.source.get_records()
 
         payload = {"value_schema": value_schema, "records": records}
 
-        print(payload)
+        # Temporarily returns payload instead of making full
+        # POST request.
+        # TODO: Once complete, delete and uncomment the following
+        return payload
 
-        response = requests.request("POST", url, json=payload, headers=headers)
-
-        return response
+        # response = requests.request("POST",
+        #                             url,
+        #                             json=payload,
+        #                             headers=headers
+        #                             )
+        # return response.text
