@@ -1,70 +1,36 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import timedelta
+from string import Template
 
 from sasquatchbackpack.scripts import usgs
 
 
-class data_source:
+class DataSource(ABC):
     """Base class for all relevant backpack data sources
 
     Parameters
     ----------
-    namespace
-        Which kafka namespace should be used, see
-        https://sasquatch.lsst.io/user-guide/namespaces.html#namespaces
     topic name
         Specific source name, used as an identifier
-    schema directory
-        Directory path to the relevant source schema, eg:
-         "src/sasquatchbackpack/schemas/*.avsc"
     """
 
-    def __init__(self, namespace: str, topic_name: str, schema_directory: str):
-        self.namespace = namespace
+    def __init__(self, topic_name: str):
         self.topic_name = topic_name
-        self.schema_directory = schema_directory
-        self.results: list = []
 
-    def set_new_payload_values(self) -> None:
-        """Template method that should allow alteration of provided
-        parameters then rebuild results
-        """
-        return
+    @abstractmethod
+    def load_schema(self) -> str:
+        pass
 
-    def build_results(self) -> None:
-        """Template method that should create a dataset based off the
-        current provided parameters and update results.
-        """
-        return
-
+    @abstractmethod
     def get_records(self) -> list:
-        """Template method that should assemble a payload based off
-        built results
-        """
-        return []
-
-    def get_results(self) -> list:
-        """Gives access to most recent result list
-
-        Returns
-        -------
-        results
-            Most recent list of results built with build_results()
-        """
-        return self.results
-
-    def get_schema_directory(self) -> str:
-        """Gives access to the provided schema directory path
-
-        Returns
-        -------
-        schema directory
-            Provided path to the relevant source's schema
-        """
-        return self.schema_directory
+        pass
 
 
-class usgs_source(data_source):
-    """Backpack data source for the USGS Earthquake API
+@dataclass
+class USGSConfig:
+    """Class containing relevant configuration information for the
+    USGSSource
 
     Parameters
     ----------
@@ -77,82 +43,60 @@ class usgs_source(data_source):
         (latitude, longitude)
     magnitude bounds
         upper and lower bounds for magnitude search (lower, upper)
-    namespace
-        Which kafka namespace should be used, see
-        https://sasquatch.lsst.io/user-guide/namespaces.html#namespaces
-        , optional, defaults to "lsst.example"
-    topic name
-        Specific source name, used as an identifier, optional,
-        defaults to "usgs-earthquake-data"
-    schema directory
+    schema file
         Directory path to the relevant source schema
         ("src/sasquatchbackpack/schemas/*.avsc"), optional,
         defaults to "src/sasquatchbackpack/schemas/usgs.avsc"
     """
 
+    duration: timedelta
+    radius: int
+    coords: tuple[float, float]
+    magnitude_bounds: tuple[int, int]
+    schema_file: str = "src/sasquatchbackpack/schemas/usgs.avsc"
+
+
+class USGSSource(DataSource):
+    """Backpack data source for the USGS Earthquake API
+
+    Parameters
+    ----------
+    config
+        USGSConfig to transmit relevant information to
+        the Source
+    topic name
+        Specific source name, used as an identifier
+    """
+
     def __init__(
         self,
-        duration: timedelta,
-        radius: int,
-        coords: tuple[float, float],
-        magnitude_bounds: tuple[int, int],
-        namespace: str = "lsst.example",
+        config: USGSConfig,
         topic_name: str = "usgs-earthquake-data",
-        schema_directory: str = "src/sasquatchbackpack/schemas" + "/usgs.avsc",
     ):
-        super().__init__(namespace, topic_name, schema_directory)
-        self.duration = duration
-        self.radius = radius
-        self.coords = coords
-        self.magnitude_bounds = magnitude_bounds
-        self.build_results()
+        super().__init__(topic_name)
+        self.duration = config.duration
+        self.config = config
+        self.radius = config.radius
+        self.coords = config.coords
+        self.magnitude_bounds = config.magnitude_bounds
 
-    def set_new_payload_values(
-        self,
-        new_duration: timedelta = timedelta(0, 0, 1, 0, 0, 0, 0),
-        new_radius: int = -1,
-        new_coords: tuple[float, float] = (1000.0, 1000.0),
-        new_magnitude_bounds: tuple[int, int] = (0, 0),
-    ) -> None:
-        """Alters payload values then rebuilds results using new values
-
-        Parameters
-        ----------
-        duration
-            How far back from the present should be searched, optional
-        radius
-            Padius of search from central coordinates in km, optional
-        coords
-            latitude and longitude of the central coordnates
-            (latitude, longitude), optional
-        magnitude bounds
-            upper and lower bounds for magnitude search
-            (lower, upper), optional
-        """
-        if new_duration is not timedelta(0, 0, 1, 0, 0, 0, 0):
-            self.duration = new_duration
-        if new_radius is not -1:
-            self.radius = new_radius
-        if new_coords != (1000.0, 1000.0):
-            self.coords = new_coords
-        if new_magnitude_bounds != (0, 0):
-            self.magnitude_bounds = new_magnitude_bounds
-
-        self.build_results()
-
-    def build_results(self) -> None:
+    def load_schema(self) -> str:
         """Query the USGS API using the current provided parameters,
         then update results.
         """
-        self.results = usgs.search_api(
-            self.duration,
-            self.radius,
-            self.coords,
-            self.magnitude_bounds,
+        with open(self.config.schema_file, "r") as file:
+            template = Template(file.read())
+
+        value_schema = template.substitute(
+            {
+                "topic_name": self.topic_name,
+            }
         )
 
+        return value_schema
+
     def get_records(self) -> list:
-        """Assembles a payload based off most recent build results
+        """Calls the USGS Comcat API and assembles records
 
         Returns
         -------
@@ -161,9 +105,16 @@ class usgs_source(data_source):
             each containing data about a specific earthquake
             in the build results.
         """
+        results = usgs.search_api(
+            self.duration,
+            self.radius,
+            self.coords,
+            self.magnitude_bounds,
+        )
+
         records = []
 
-        for result in self.results:
+        for result in results:
             records.append(
                 {
                     "value": {

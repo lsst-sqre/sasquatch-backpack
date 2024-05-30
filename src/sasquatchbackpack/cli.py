@@ -3,6 +3,7 @@ from datetime import timedelta
 import click
 
 from sasquatchbackpack import sasquatch, sources
+from sasquatchbackpack.scripts import usgs
 
 DEFAULT_RADIUS = 400
 
@@ -177,11 +178,12 @@ def usgs_earthquake_data(
     """
     total_duration = timedelta(duration[0], 0, 0, 0, 0, duration[1], 0)
 
-    source = sources.usgs_source(
-        total_duration, radius, coords, magnitude_bounds
+    results = usgs.search_api(
+        total_duration,
+        radius,
+        coords,
+        magnitude_bounds,
     )
-
-    results = source.get_results()
 
     if len(results) > 0:
         click.secho("SUCCESS!", fg="green")
@@ -199,9 +201,16 @@ def usgs_earthquake_data(
     if not test:
         click.echo("Sending data...")
 
-        poster = sasquatch.sasquatch_deploy(source)
+        config = sources.USGSConfig(
+            total_duration, radius, coords, magnitude_bounds
+        )
+        source = sources.USGSSource(config)
 
-        click.echo(poster.send_data())
+        poster = sasquatch.BackpackDispatcher(
+            source, sasquatch.DispatcherConfig()
+        )
+
+        click.echo(poster.post())
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
-from string import Template
+import json
+from dataclasses import dataclass
 
 import requests
 
@@ -8,20 +9,49 @@ from sasquatchbackpack import sources
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
 
-class sasquatch_deploy:
+@dataclass
+class DispatcherConfig:
+    """Class containing relevant configuration information for the
+    BackpackDispatcher
+    """
+
+    sasquatch_rest_proxy_url = (
+        "https://data-int.lsst.cloud/sasquatch-rest-proxy"
+    )
+
+
+class BackpackDispatcher:
     """A class to send backpack data to kafka.
 
     Parameters
     ----------
     source
-        data_source containing the payload and other important,
-        individulized data
+        DataSource containing schema and record data to be
+        posted to remote
+    config
+        DispatcherConfig to transmit other relevant information to
+        the Dispatcher
     """
 
-    def __init__(self, source: sources.data_source):
+    def __init__(self, source: sources.DataSource, config: DispatcherConfig):
         self.source = source
+        self.config = config
+        self.schema = source.load_schema()
+        self.namespace = self.get_namespace()
 
-    def create_kafka_topic(self) -> str:
+    def get_namespace(self) -> str:
+        """Sorts the schema and returns the namespace value
+
+        Returns
+        -------
+        namespace
+            provided namespace from the schema file
+        """
+        json_schema = json.loads(self.schema)
+
+        return json_schema["namespace"]
+
+    def create_topic(self) -> str:
         """Creates kafka topic based off data from provided source
 
         Returns
@@ -29,14 +59,11 @@ class sasquatch_deploy:
         response text
             The results of the POST request in string format
         """
-        sasquatch_rest_proxy_url = (
-            "https://data-int.lsst.cloud/sasquatch-rest-proxy"
-        )
-
         headers = {"content-type": "application/json"}
 
         r = requests.get(
-            f"{sasquatch_rest_proxy_url}/v3/clusters", headers=headers
+            f"{self.config.sasquatch_rest_proxy_url}/v3/clusters",
+            headers=headers,
         )
 
         cluster_id = r.json()["data"][0]["cluster_id"]
@@ -45,8 +72,7 @@ class sasquatch_deploy:
         # factor of 3 by default, this configuration is fixed for the
         # Sasquatch Kafka cluster.
         topic_config = {
-            "topic_name": f"{self.source.namespace}."
-            + f"{self.source.topic_name}",
+            "topic_name": f"{self.namespace}." + f"{self.source.topic_name}",
             "partitions_count": 1,
             "replication_factor": 3,
         }
@@ -54,30 +80,22 @@ class sasquatch_deploy:
         headers = {"content-type": "application/json"}
 
         response = requests.post(
-            f"{sasquatch_rest_proxy_url}/v3/clusters/{cluster_id}/topics",
+            f"{self.config.sasquatch_rest_proxy_url}/v3/clusters/"
+            + f"{cluster_id}/topics",
             json=topic_config,
             headers=headers,
         )
         return response.text
 
-    def send_data(self) -> dict:
-        """Assemble schema and payload, then make a POST request to kafka
+    def post(self) -> dict:
+        """Assemble schema and payload from the given source, then
+        makes a POST request to kafka
 
         Returns
         -------
         response text
             The results of the POST request in string format
         """
-        with open(self.source.schema_directory, "r") as file:
-            template = Template(file.read())
-
-        value_schema = template.substitute(
-            {
-                "namespace": self.source.namespace,
-                "topic_name": self.source.topic_name,
-            }
-        )
-
         # Currently unused, TODO: Uncomment when POSTing begins
 
         # url = f"{sasquatch_rest_proxy_url}/topics/"
@@ -92,7 +110,7 @@ class sasquatch_deploy:
 
         records = self.source.get_records()
 
-        payload = {"value_schema": value_schema, "records": records}
+        payload = {"value_schema": self.schema, "records": records}
 
         # Temporarily returns payload instead of making full
         # POST request.
