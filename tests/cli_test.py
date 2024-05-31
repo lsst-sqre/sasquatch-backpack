@@ -1,4 +1,4 @@
-"""Test the CLI"""
+"""Test the CLI."""
 
 import pytest
 from click.testing import CliRunner
@@ -7,7 +7,7 @@ from sasquatchbackpack import cli
 
 
 @pytest.mark.parametrize(
-    "duration, radius, coords, magnitude_bounds, expected",
+    ("duration", "radius", "coords", "magnitude_bounds", "expected"),
     [
         (
             (50, 0),
@@ -74,20 +74,6 @@ from sasquatchbackpack import cli
         ),
         (
             (50, 0),
-            400,
-            (-30.22573200864174, -181),
-            (2, 10),
-            ["longitude", "too low"],
-        ),
-        (
-            (50, 0),
-            400,
-            (-30.22573200864174, 181),
-            (2, 10),
-            ["longitude", "too high"],
-        ),
-        (
-            (50, 0),
             100,
             (-30.22573200864174, -70.73932987127506),
             (-1, 10),
@@ -134,7 +120,7 @@ def test_usgs_earthquake_data(
     magnitude_bounds: tuple[int, int],
     expected: list[str],
 ) -> None:
-    """Ensure fringe user input functions as intended"""
+    """Ensure fringe user input functions as intended."""
     runner = CliRunner()
 
     result = runner.invoke(

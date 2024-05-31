@@ -1,13 +1,16 @@
+"""Framework and implementation for data structures to post data to kafka."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
+from pathlib import Path
 from string import Template
 
 from sasquatchbackpack.scripts import usgs
 
 
 class DataSource(ABC):
-    """Base class for all relevant backpack data sources
+    """Base class for all relevant backpack data sources.
 
     Parameters
     ----------
@@ -15,7 +18,7 @@ class DataSource(ABC):
         Specific source name, used as an identifier
     """
 
-    def __init__(self, topic_name: str):
+    def __init__(self, topic_name: str) -> None:
         self.topic_name = topic_name
 
     @abstractmethod
@@ -30,7 +33,7 @@ class DataSource(ABC):
 @dataclass
 class USGSConfig:
     """Class containing relevant configuration information for the
-    USGSSource
+    USGSSource.
 
     Parameters
     ----------
@@ -57,7 +60,7 @@ class USGSConfig:
 
 
 class USGSSource(DataSource):
-    """Backpack data source for the USGS Earthquake API
+    """Backpack data source for the USGS Earthquake API.
 
     Parameters
     ----------
@@ -72,7 +75,7 @@ class USGSSource(DataSource):
         self,
         config: USGSConfig,
         topic_name: str = "usgs-earthquake-data",
-    ):
+    ) -> None:
         super().__init__(topic_name)
         self.duration = config.duration
         self.config = config
@@ -84,19 +87,17 @@ class USGSSource(DataSource):
         """Query the USGS API using the current provided parameters,
         then update results.
         """
-        with open(self.config.schema_file, "r") as file:
+        with Path(self.config.schema_file).open("r") as file:
             template = Template(file.read())
 
-        value_schema = template.substitute(
+        return template.substitute(
             {
                 "topic_name": self.topic_name,
             }
         )
 
-        return value_schema
-
     def get_records(self) -> list:
-        """Calls the USGS Comcat API and assembles records
+        """Call the USGS Comcat API and assembles records.
 
         Returns
         -------
@@ -112,20 +113,16 @@ class USGSSource(DataSource):
             self.magnitude_bounds,
         )
 
-        records = []
-
-        for result in results:
-            records.append(
-                {
-                    "value": {
-                        "timestamp": result.time.strftime("%s"),
-                        "id": result.id,
-                        "latitude": result.latitude,
-                        "longitude": result.longitude,
-                        "depth": float(result.depth),
-                        "magnitude": float(result.magnitude),
-                    }
+        return [
+            {
+                "value": {
+                    "timestamp": result.time.strftime("%s"),
+                    "id": result.id,
+                    "latitude": result.latitude,
+                    "longitude": result.longitude,
+                    "depth": float(result.depth),
+                    "magnitude": float(result.magnitude),
                 }
-            )
-
-        return records
+            }
+            for result in results
+        ]

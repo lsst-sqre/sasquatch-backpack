@@ -1,1 +1,1 @@
-"""Scripts for the CLI"""
+"""Scripts for the CLI."""

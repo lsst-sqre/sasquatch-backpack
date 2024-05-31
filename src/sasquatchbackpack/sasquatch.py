@@ -1,3 +1,5 @@
+"""Handles dispatch of backpack data to kafka."""
+
 import json
 from dataclasses import dataclass
 
@@ -12,7 +14,7 @@ from sasquatchbackpack import sources
 @dataclass
 class DispatcherConfig:
     """Class containing relevant configuration information for the
-    BackpackDispatcher
+    BackpackDispatcher.
     """
 
     sasquatch_rest_proxy_url = (
@@ -33,14 +35,16 @@ class BackpackDispatcher:
         the Dispatcher
     """
 
-    def __init__(self, source: sources.DataSource, config: DispatcherConfig):
+    def __init__(
+        self, source: sources.DataSource, config: DispatcherConfig
+    ) -> None:
         self.source = source
         self.config = config
         self.schema = source.load_schema()
         self.namespace = self.get_namespace()
 
     def get_namespace(self) -> str:
-        """Sorts the schema and returns the namespace value
+        """Sorts the schema and returns the namespace value.
 
         Returns
         -------
@@ -52,7 +56,7 @@ class BackpackDispatcher:
         return json_schema["namespace"]
 
     def create_topic(self) -> str:
-        """Creates kafka topic based off data from provided source
+        """Create kafka topic based off data from provided source.
 
         Returns
         -------
@@ -64,6 +68,7 @@ class BackpackDispatcher:
         r = requests.get(
             f"{self.config.sasquatch_rest_proxy_url}/v3/clusters",
             headers=headers,
+            timeout=10,
         )
 
         cluster_id = r.json()["data"][0]["cluster_id"]
@@ -81,45 +86,42 @@ class BackpackDispatcher:
 
         response = requests.post(
             f"{self.config.sasquatch_rest_proxy_url}/v3/clusters/"
-            + f"{cluster_id}/topics",
+            f"{cluster_id}/topics",
             json=topic_config,
             headers=headers,
+            timeout=10,
         )
         return response.text
 
     def post(self) -> dict:
         """Assemble schema and payload from the given source, then
-        makes a POST request to kafka
+        makes a POST request to kafka.
 
         Returns
         -------
         response text
             The results of the POST request in string format
         """
-        # Currently unused, TODO: Uncomment when POSTing begins
-
-        # url = f"{sasquatch_rest_proxy_url}/topics/"
-        #       + f"{self.source.namespace}.{self.source.topic_name}"
-        # headers = {
-        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
-        #     "Accept": "application/vnd.kafka.v2+json",
-        # }
-        # sasquatch_rest_proxy_url = (
-        #     "https://data-int.lsst.cloud/sasquatch-rest-proxy"
-        # )
-
         records = self.source.get_records()
 
         payload = {"value_schema": self.schema, "records": records}
 
-        # Temporarily returns payload instead of making full
-        # POST request.
-        # TODO: Once complete, delete and uncomment the following
-        return payload
+        # Temporary lint bypassing during testing
+        # ruff: noqa: ERA001
+        return payload  # noqa: RET504
+
+        # url = f"{self.config.sasquatch_rest_proxy_url}/topics/"
+        # f"{self.namespace}.{self.source.topic_name}"
+
+        # headers = {
+        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
+        #     "Accept": "application/vnd.kafka.v2+json",
+        # }
 
         # response = requests.request("POST",
         #                             url,
         #                             json=payload,
-        #                             headers=headers
+        #                             headers=headers,
+        #                             timeout=10,
         #                             )
         # return response.text
