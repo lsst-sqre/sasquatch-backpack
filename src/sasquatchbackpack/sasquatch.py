@@ -1,7 +1,8 @@
 """Handles dispatch of backpack data to kafka."""
 
-import json
+import os
 from dataclasses import dataclass
+from string import Template
 
 import requests
 
@@ -15,11 +16,26 @@ from sasquatchbackpack import sources
 class DispatcherConfig:
     """Class containing relevant configuration information for the
     BackpackDispatcher.
+
+    Values
+    ------
+    sasquatch_rest_proxy_url
+        environment variable contatining the target for data
+    partitions_count
+        number of partitions to create
+    replication_factor
+        number of replicas to create
+    namespace
+        environment varible containing the target namespace
     """
 
-    sasquatch_rest_proxy_url = (
-        "https://data-int.lsst.cloud/sasquatch-rest-proxy"
+    sasquatch_rest_proxy_url = os.getenv(
+        "SASQUATCH_REST_PROXY_URL",
+        "https://data-int.lsst.cloud/sasquatch-rest-proxy",
     )
+    partitions_count = 1
+    replication_factor = 3
+    namespace = os.getenv("BACKPACK_NAMESPACE", "lsst.example")
 
 
 class BackpackDispatcher:
@@ -40,20 +56,12 @@ class BackpackDispatcher:
     ) -> None:
         self.source = source
         self.config = config
-        self.schema = source.load_schema()
-        self.namespace = self.get_namespace()
-
-    def get_namespace(self) -> str:
-        """Sorts the schema and returns the namespace value.
-
-        Returns
-        -------
-        namespace
-            provided namespace from the schema file
-        """
-        json_schema = json.loads(self.schema)
-
-        return json_schema["namespace"]
+        self.schema = Template(source.load_schema()).substitute(
+            {
+                "namespace": self.config.namespace,
+                "topic_name": self.source.topic_name,
+            }
+        )
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -73,13 +81,11 @@ class BackpackDispatcher:
 
         cluster_id = r.json()["data"][0]["cluster_id"]
 
-        # The topic is created with one partition and a replication
-        # factor of 3 by default, this configuration is fixed for the
-        # Sasquatch Kafka cluster.
         topic_config = {
-            "topic_name": f"{self.namespace}." + f"{self.source.topic_name}",
-            "partitions_count": 1,
-            "replication_factor": 3,
+            "topic_name": f"{self.config.namespace}."
+            f"{self.source.topic_name}",
+            "partitions_count": self.config.partitions_count,
+            "replication_factor": self.config.replication_factor,
         }
 
         headers = {"content-type": "application/json"}

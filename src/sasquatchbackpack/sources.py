@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
-from string import Template
 
 from sasquatchbackpack.scripts import usgs
 
@@ -88,13 +87,7 @@ class USGSSource(DataSource):
         then update results.
         """
         with Path(self.config.schema_file).open("r") as file:
-            template = Template(file.read())
-
-        return template.substitute(
-            {
-                "topic_name": self.topic_name,
-            }
-        )
+            return file.read()
 
     def get_records(self) -> list:
         """Call the USGS Comcat API and assembles records.

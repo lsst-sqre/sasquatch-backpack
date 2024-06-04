@@ -141,7 +141,7 @@ def main() -> None:
 @click.option(
     "-c",
     "--coords",
-    help="latitude and longitude of the central coordnates "
+    help="latitude and longitude of the central coordinates "
     "(latitude, longitude). Defaults to the coordinates of Cerro Pachon.",
     default=DEFAULT_COORDS,
     type=(float, float),
@@ -195,9 +195,10 @@ def usgs_earthquake_data(
     )
     source = sources.USGSSource(config)
 
-    poster = sasquatch.BackpackDispatcher(source, sasquatch.DispatcherConfig())
-
-    click.echo(poster.post())
+    backpack_dispatcher = sasquatch.BackpackDispatcher(
+        source, sasquatch.DispatcherConfig()
+    )
+    click.echo(backpack_dispatcher.post())
 
 
 if __name__ == "__main__":

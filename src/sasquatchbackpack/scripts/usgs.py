@@ -30,7 +30,7 @@ def search_api(
     """
     # Linting bypassed, as at the time of writing Libcomcat breaks if provided
     # with a timezone-aware datetime object
-    current_dt = datetime.now(None)  # noqa: DTZ005
+    current_dt = datetime.utcnow()  # noqa: DTZ003
 
     return search(
         starttime=current_dt - duration,
