@@ -1,5 +1,7 @@
 """Handles dispatch of backpack data to kafka."""
 
+__all__ = ["BackpackDispatcher", "DispatcherConfig"]
+
 import os
 from dataclasses import dataclass
 from string import Template
@@ -68,7 +70,7 @@ class BackpackDispatcher:
 
         Returns
         -------
-        response text
+        str
             The results of the POST request in string format
         """
         headers = {"content-type": "application/json"}
@@ -105,7 +107,7 @@ class BackpackDispatcher:
 
         Returns
         -------
-        response text
+        str
             The results of the POST request in string format
         """
         records = self.source.get_records()

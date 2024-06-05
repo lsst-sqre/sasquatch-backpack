@@ -1,5 +1,7 @@
 """Framework and implementation for data structures to post data to kafka."""
 
+__all__ = ["DataSource", "USGSSource", "USGSConfig"]
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
@@ -13,7 +15,7 @@ class DataSource(ABC):
 
     Parameters
     ----------
-    topic name
+    str
         Specific source name, used as an identifier
     """
 
@@ -36,19 +38,19 @@ class USGSConfig:
 
     Parameters
     ----------
-    duration
+    timedelta
         How far back from the present should be searched
-    radius
-        Padius of search from central coordinates in km
-    coords
+    int
+        Radius of search from central coordinates in km
+    tuple[float,float]
         latitude and longitude of the central coordnates
         (latitude, longitude)
-    magnitude bounds
+    tuple[int, int]
         upper and lower bounds for magnitude search (lower, upper)
-    schema file
+    str
         Directory path to the relevant source schema
-        ("src/sasquatchbackpack/schemas/*.avsc"), optional,
-        defaults to "src/sasquatchbackpack/schemas/usgs.avsc"
+        (src/sasquatchbackpack/schemas/schema_name_here.avsc), optional,
+        defaults to src/sasquatchbackpack/schemas/usgs.avsc
     """
 
     duration: timedelta
@@ -63,10 +65,10 @@ class USGSSource(DataSource):
 
     Parameters
     ----------
-    config
+    USGSconfig
         USGSConfig to transmit relevant information to
         the Source
-    topic name
+    str
         Specific source name, used as an identifier
     """
 
@@ -94,7 +96,7 @@ class USGSSource(DataSource):
 
         Returns
         -------
-        records
+        list
             A payload consisting of a list of dictionaries,
             each containing data about a specific earthquake
             in the build results.
