@@ -138,10 +138,8 @@ def test_usgs_earthquake_data(
             str(magnitude_bounds[0]),
             str(magnitude_bounds[1]),
         ],
+        input="N",
     )
-
-    if "SUCCESS" in expected:
-        assert result.exit_code == 0
 
     for value in expected:
         assert value in result.output

@@ -35,7 +35,7 @@ class DispatcherConfig:
     )
     partitions_count = 1
     replication_factor = 3
-    namespace = os.getenv("BACKPACK_NAMESPACE", "lsst.example")
+    namespace = os.getenv("BACKPACK_NAMESPACE", "lsst.backpack")
 
 
 class BackpackDispatcher:
@@ -99,7 +99,7 @@ class BackpackDispatcher:
         )
         return response.text
 
-    def post(self) -> dict:
+    def post(self) -> str:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
 
@@ -112,22 +112,21 @@ class BackpackDispatcher:
 
         payload = {"value_schema": self.schema, "records": records}
 
-        # Temporary lint bypassing during testing
-        # ruff: noqa: ERA001
-        return payload  # noqa: RET504
+        url = (
+            f"{self.config.sasquatch_rest_proxy_url}/topics/"
+            f"{self.config.namespace}.{self.source.topic_name}"
+        )
 
-        # url = f"{self.config.sasquatch_rest_proxy_url}/topics/"
-        # f"{self.namespace}.{self.source.topic_name}"
+        headers = {
+            "Content-Type": "application/vnd.kafka.avro.v2+json",
+            "Accept": "application/vnd.kafka.v2+json",
+        }
 
-        # headers = {
-        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
-        #     "Accept": "application/vnd.kafka.v2+json",
-        # }
-
-        # response = requests.request("POST",
-        #                             url,
-        #                             json=payload,
-        #                             headers=headers,
-        #                             timeout=10,
-        #                             )
-        # return response.text
+        response = requests.request(
+            "POST",
+            url,
+            json=payload,
+            headers=headers,
+            timeout=10,
+        )
+        return response.text

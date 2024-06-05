@@ -73,7 +73,7 @@ class USGSSource(DataSource):
     def __init__(
         self,
         config: USGSConfig,
-        topic_name: str = "usgs-earthquake-data",
+        topic_name: str = "usgs_earthquake_data",
     ) -> None:
         super().__init__(topic_name)
         self.duration = config.duration
@@ -109,7 +109,7 @@ class USGSSource(DataSource):
         return [
             {
                 "value": {
-                    "timestamp": result.time.strftime("%s"),
+                    "timestamp": int(result.time.strftime("%s")),
                     "id": result.id,
                     "latitude": result.latitude,
                     "longitude": result.longitude,

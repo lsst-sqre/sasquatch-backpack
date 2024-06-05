@@ -188,6 +188,8 @@ def usgs_earthquake_data(
         click.echo("------")
         return
 
+    click.confirm("Do you want to post the above data?", abort=True)
+
     click.echo("Sending data...")
 
     config = sources.USGSConfig(
