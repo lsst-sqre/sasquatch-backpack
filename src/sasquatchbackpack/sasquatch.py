@@ -3,7 +3,7 @@
 __all__ = ["BackpackDispatcher", "DispatcherConfig"]
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from string import Template
 
 import requests
@@ -18,26 +18,23 @@ from sasquatchbackpack import sources
 class DispatcherConfig:
     """Class containing relevant configuration information for the
     BackpackDispatcher.
-
-    Values
-    ------
-    sasquatch_rest_proxy_url
-        environment variable contatining the target for data
-    partitions_count
-        number of partitions to create
-    replication_factor
-        number of replicas to create
-    namespace
-        environment varible containing the target namespace
     """
 
-    sasquatch_rest_proxy_url = os.getenv(
-        "SASQUATCH_REST_PROXY_URL",
-        "https://data-int.lsst.cloud/sasquatch-rest-proxy",
+    sasquatch_rest_proxy_url: str = field(
+        default=os.getenv(
+            "SASQUATCH_REST_PROXY_URL",
+            "https://data-int.lsst.cloud/sasquatch-rest-proxy",
+        )
     )
-    partitions_count = 1
-    replication_factor = 3
-    namespace = os.getenv("BACKPACK_NAMESPACE", "lsst.backpack")
+    """Environment variable contatining the target for data"""
+    partitions_count: int = 1
+    """Number of topic partitions to create"""
+    replication_factor: int = 3
+    """Number of topic replicas to create"""
+    namespace: str = field(
+        default=os.getenv("BACKPACK_NAMESPACE", "lsst.backpack")
+    )
+    """Sasquatch namespace for the topic"""
 
 
 class BackpackDispatcher:
@@ -45,11 +42,11 @@ class BackpackDispatcher:
 
     Parameters
     ----------
-    source
+    source : DataSource
         DataSource containing schema and record data to be
         posted to remote
-    config
-        DispatcherConfig to transmit other relevant information to
+    config : DispatcherConfig
+        Item that transmits other relevant information to
         the Dispatcher
     """
 
@@ -70,18 +67,21 @@ class BackpackDispatcher:
 
         Returns
         -------
-        str
-            The results of the POST request in string format
+        response text : str
+            The results of the requests in string format
         """
         headers = {"content-type": "application/json"}
 
-        r = requests.get(
-            f"{self.config.sasquatch_rest_proxy_url}/v3/clusters",
-            headers=headers,
-            timeout=10,
-        )
-
-        cluster_id = r.json()["data"][0]["cluster_id"]
+        try:
+            r = requests.get(
+                f"{self.config.sasquatch_rest_proxy_url}/v3/clusters",
+                headers=headers,
+                timeout=10,
+            )
+            r.raise_for_status()  # Raises HTTPError for bad responses
+            cluster_id = r.json()["data"][0]["cluster_id"]
+        except requests.RequestException as e:
+            return f"Error getting cluster ID: {e}"
 
         topic_config = {
             "topic_name": f"{self.config.namespace}."
@@ -92,13 +92,18 @@ class BackpackDispatcher:
 
         headers = {"content-type": "application/json"}
 
-        response = requests.post(
-            f"{self.config.sasquatch_rest_proxy_url}/v3/clusters/"
-            f"{cluster_id}/topics",
-            json=topic_config,
-            headers=headers,
-            timeout=10,
-        )
+        try:
+            response = requests.post(
+                f"{self.config.sasquatch_rest_proxy_url}/v3/clusters/"
+                f"{cluster_id}/topics",
+                json=topic_config,
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()  # Raises HTTPError for bad responses
+        except requests.RequestException as e:
+            return f"Error POSTing data: {e}"
+
         return response.text
 
     def post(self) -> str:
@@ -107,7 +112,7 @@ class BackpackDispatcher:
 
         Returns
         -------
-        str
+        response text : str
             The results of the POST request in string format
         """
         records = self.source.get_records()
@@ -124,11 +129,16 @@ class BackpackDispatcher:
             "Accept": "application/vnd.kafka.v2+json",
         }
 
-        response = requests.request(
-            "POST",
-            url,
-            json=payload,
-            headers=headers,
-            timeout=10,
-        )
+        try:
+            response = requests.request(
+                "POST",
+                url,
+                json=payload,
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()  # Raises HTTPError for bad responses
+        except requests.RequestException as e:
+            return f"Error POSTing data: {e}"
+
         return response.text

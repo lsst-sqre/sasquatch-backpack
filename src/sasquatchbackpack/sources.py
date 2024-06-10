@@ -15,7 +15,7 @@ class DataSource(ABC):
 
     Parameters
     ----------
-    str
+    topic_name : str
         Specific source name, used as an identifier
     """
 
@@ -38,16 +38,16 @@ class USGSConfig:
 
     Parameters
     ----------
-    timedelta
+    duration : datetime.timedelta
         How far back from the present should be searched
-    int
+    radius : int
         Radius of search from central coordinates in km
-    tuple[float,float]
+    coords : tuple[float,float]
         latitude and longitude of the central coordnates
         (latitude, longitude)
-    tuple[int, int]
+    magnitude_bounds : tuple[int, int]
         upper and lower bounds for magnitude search (lower, upper)
-    str
+    schema_file : str
         Directory path to the relevant source schema
         (src/sasquatchbackpack/schemas/schema_name_here.avsc), optional,
         defaults to src/sasquatchbackpack/schemas/usgs.avsc
@@ -65,10 +65,10 @@ class USGSSource(DataSource):
 
     Parameters
     ----------
-    USGSconfig
+    config : USGSConfig
         USGSConfig to transmit relevant information to
         the Source
-    str
+    topic_name : str
         Specific source name, used as an identifier
     """
 
@@ -96,7 +96,7 @@ class USGSSource(DataSource):
 
         Returns
         -------
-        list
+        results : list
             A payload consisting of a list of dictionaries,
             each containing data about a specific earthquake
             in the build results.
