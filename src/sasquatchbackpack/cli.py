@@ -200,7 +200,12 @@ def usgs_earthquake_data(
     backpack_dispatcher = sasquatch.BackpackDispatcher(
         source, sasquatch.DispatcherConfig()
     )
-    click.echo(backpack_dispatcher.post())
+    result = backpack_dispatcher.post()
+
+    if "Error" in result:
+        click.secho(result, fg="red")
+    else:
+        click.secho("Data successfully sent!", fg="green")
 
 
 if __name__ == "__main__":
