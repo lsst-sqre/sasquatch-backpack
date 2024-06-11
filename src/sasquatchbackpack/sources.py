@@ -27,7 +27,7 @@ class DataSource(ABC):
         pass
 
     @abstractmethod
-    def get_records(self) -> list:
+    def get_records(self) -> list[dict]:
         pass
 
 
@@ -43,11 +43,11 @@ class USGSConfig:
     radius : int
         Radius of search from central coordinates in km
     coords : tuple[float,float]
-        latitude and longitude of the central coordnates
+        Latitude and longitude of the central coordnates
         (latitude, longitude)
     magnitude_bounds : tuple[int, int]
-        upper and lower bounds for magnitude search (lower, upper)
-    schema_file : str
+        Upper and lower bounds for magnitude search (lower, upper)
+    schema_file : `str`, optional
         Directory path to the relevant source schema
         (src/sasquatchbackpack/schemas/schema_name_here.avsc), optional,
         defaults to src/sasquatchbackpack/schemas/usgs.avsc
@@ -91,33 +91,38 @@ class USGSSource(DataSource):
         with Path(self.config.schema_file).open("r") as file:
             return file.read()
 
-    def get_records(self) -> list:
+    def get_records(self) -> list[dict]:
         """Call the USGS Comcat API and assembles records.
 
         Returns
         -------
-        results : list
+        List[dict] : list[dict]
             A payload consisting of a list of dictionaries,
             each containing data about a specific earthquake
             in the build results.
         """
-        results = usgs.search_api(
-            self.duration,
-            self.radius,
-            self.coords,
-            self.magnitude_bounds,
-        )
+        try:
+            results = usgs.search_api(
+                self.duration,
+                self.radius,
+                self.coords,
+                self.magnitude_bounds,
+            )
 
-        return [
-            {
-                "value": {
-                    "timestamp": int(result.time.strftime("%s")),
-                    "id": result.id,
-                    "latitude": result.latitude,
-                    "longitude": result.longitude,
-                    "depth": float(result.depth),
-                    "magnitude": float(result.magnitude),
+            return [
+                {
+                    "value": {
+                        "timestamp": int(result.time.strftime("%s")),
+                        "id": result.id,
+                        "latitude": result.latitude,
+                        "longitude": result.longitude,
+                        "depth": float(result.depth),
+                        "magnitude": float(result.magnitude),
+                    }
                 }
-            }
-            for result in results
-        ]
+                for result in results
+            ]
+        except ConnectionError as ce:
+            raise ConnectionError(
+                f"A connection error occurred while fetching records: {ce}"
+            ) from ce
