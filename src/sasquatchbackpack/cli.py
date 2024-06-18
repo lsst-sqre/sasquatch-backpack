@@ -164,7 +164,8 @@ def usgs_earthquake_data(
     magnitude_bounds: tuple[int, int],
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
-    to console.
+    to console. Optionally, also allows the user to post the
+    queried data to kafka.
     """
     total_duration = timedelta(duration[0], 0, 0, 0, 0, duration[1], 0)
 
