@@ -18,14 +18,15 @@ def check_duration(
     ctx: click.Context, param: dict, value: tuple[int, int]
 ) -> tuple[int, int]:
     """Validate duration inputs."""
-    total_duration = timedelta(value[0], 0, 0, 0, 0, value[1], 0)
+    days, hours = value
+    total_duration = timedelta(days=days, hours=hours)
 
-    if total_duration > timedelta(10000, 0, 0, 0, 0, 0, 0):
+    if total_duration > timedelta(days=10000):
         raise click.BadParameter(
             f"""Your provided duration ({total_duration!s}) is
     too large. The maximum is 10000 days."""
         )
-    if total_duration < timedelta(0, 0, 0, 0, 0, 1, 0):
+    if total_duration < timedelta(hours=1):
         raise click.BadParameter(
             f"""Your provided duration ({total_duration!s}) is
     too small. The minimum is 1 hour."""
@@ -54,26 +55,17 @@ def check_coords(
     ctx: click.Context, param: dict, value: tuple[float, float]
 ) -> tuple[float, float]:
     """Validate coords inputs."""
-    if value[0] < -90.0:
+    latitude, longitude = value
+    if latitude < -90.0 or latitude > 90.0:
         raise click.BadParameter(
-            f"""Your provided latitude ({value[0]}) is too low.
- The minimum is -90."""
-        )
-    if value[0] > 90.0:
-        raise click.BadParameter(
-            f"""Your provided latitude ({value[0]}) is too high.
- The maximum is 90."""
+            f"Your provided latitude ({latitude}) is out of bounds."
+            "The range is -90 to 90."
         )
 
-    if value[1] < -180:
+    if longitude < -180.0 or longitude > 180.0:
         raise click.BadParameter(
-            f"""Your provided longitude ({value[1]}) is too low.
- The minimum is -180."""
-        )
-    if value[1] > 180:
-        raise click.BadParameter(
-            f"""Your provided longitude ({value[1]}) is too high.
- The maximum is 180."""
+            f"Your provided longitude ({longitude}) is out of bounds."
+            "The range is -180 to 180."
         )
 
     return value
@@ -83,32 +75,23 @@ def check_magnitude_bounds(
     ctx: click.Context, param: dict, value: tuple[int, int]
 ) -> tuple[int, int]:
     """Validate magnitude bounds."""
-    if value[0] < 0:
+    lower, upper = value
+    if lower < 0 or lower > 10:
         raise click.BadParameter(
-            f"""Your provided minimum magnitude ({value[0]}) is
- too small. The minimum is 0."""
-        )
-    if value[0] > 10:
-        raise click.BadParameter(
-            f"""Your provided minimum magnitude ({value[0]}) is
- too large. The maximum is 10."""
+            f"Your provided minimum magnitude ({lower}) is "
+            "out of bounds. The range is 0 to 10."
         )
 
-    if value[1] > 10:
+    if upper > 10 or upper < 0:
         raise click.BadParameter(
-            f"""Your provided maximum magnitude ({value[1]}) is
- too large. The maximum is 10."""
-        )
-    if value[1] < 0:
-        raise click.BadParameter(
-            f"""Your provided maximum magnitude ({value[1]}) is
- too small. The minimum is 0."""
+            f"Your provided maximum magnitude ({upper}) is "
+            "out of bounds. The range is 0 to 10."
         )
 
-    if value[0] > value[1]:
+    if lower > upper:
         raise click.BadParameter(
-            f"""Your provided minimum magnitude ({value[0]})
-cannot excede your provided maximum magnitude ({value[1]})."""
+            f"""Your provided minimum magnitude ({lower})
+cannot excede your provided maximum magnitude ({upper})."""
         )
 
     return value
@@ -157,17 +140,25 @@ def main() -> None:
     show_default=True,
     callback=check_magnitude_bounds,
 )
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Perform a trial run with no data being sent to Kafka.",
+)
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
+    dry_run: bool,  # noqa: FBT001
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
     to console. Optionally, also allows the user to post the
     queried data to kafka.
     """
-    total_duration = timedelta(duration[0], 0, 0, 0, 0, duration[1], 0)
+    days, hours = duration
+    total_duration = timedelta(days=days, hours=hours)
 
     results = usgs.search_api(
         total_duration,
@@ -189,7 +180,9 @@ def usgs_earthquake_data(
         click.echo("------")
         return
 
-    click.confirm("Do you want to post the above data?", abort=True)
+    if dry_run:
+        click.echo("Dry run mode: No data will be sent to Kafka.")
+        return
 
     click.echo("Sending data...")
 
@@ -207,7 +200,3 @@ def usgs_earthquake_data(
         click.secho(result, fg="red")
     else:
         click.secho("Data successfully sent!", fg="green")
-
-
-if __name__ == "__main__":
-    main()
