@@ -1,3 +1,5 @@
+"""Accesses the USGSLibcomcat API."""
+
 from datetime import datetime, timedelta
 
 from libcomcat.search import search
@@ -26,9 +28,11 @@ def search_api(
         max_magnitude (int, optional): maximum earthquake magnitude.
             Defaults to 10.
     """
-    current_dt = datetime.utcnow()
+    # Linting bypassed, as at the time of writing Libcomcat breaks if provided
+    # with a timezone-aware datetime object
+    current_dt = datetime.utcnow()  # noqa: DTZ003
 
-    km_radius_events = search(
+    return search(
         starttime=current_dt - duration,
         endtime=current_dt,
         maxradiuskm=radius,
@@ -37,5 +41,3 @@ def search_api(
         minmagnitude=magnitude_bounds[0],
         maxmagnitude=magnitude_bounds[1],
     )
-
-    return km_radius_events

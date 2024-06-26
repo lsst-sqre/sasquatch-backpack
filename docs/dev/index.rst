@@ -11,3 +11,9 @@ Learn how to contribute to the sasquatch-backpack open source project.
 
    development
    release
+
+.. toctree::
+   :caption: Reference
+   :maxdepth: 2
+
+   api/index

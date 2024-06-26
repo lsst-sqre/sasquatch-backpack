@@ -45,14 +45,8 @@ Pre-commit hooks
 The pre-commit hooks, which are automatically installed by running the :command:`make init` command on :ref:`set up <dev-environment>`, ensure that files are valid and properly formatted.
 Some pre-commit hooks automatically reformat code:
 
-``isort``
-    Automatically sorts imports in Python modules.
-
-``black``
+``ruff``
     Automatically formats Python code.
-
-``blacken-docs``
-    Automatically formats Python code in reStructuredText documentation and docstrings.
 
 When these hooks fail, your Git commit will be aborted.
 To proceed, stage the new modifications and proceed with your Git commit.

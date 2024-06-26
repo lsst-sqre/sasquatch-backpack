@@ -17,7 +17,7 @@ The current APIs that run off of sasquatch-backpack are:
 
 - USGS Earthquake data (`libcomcat <https://code.usgs.gov/ghsc/esi/libcomcat-python>`__)
 
-Sasquatch-backpack also features CLI entrypoints for easy access to integrated APIs. See the `CLI Page <cli.html>`__ for details.
+Sasquatch-backpack also features CLI entrypoints for easy access to integrated APIs. See the `CLI Page <user-guide/cli.html>`__ for details.
 
 sasquatch-backpack is developed on GitHub at https://github.com/lsst-sqre/sasquatch-backpack.
 
@@ -25,7 +25,5 @@ sasquatch-backpack is developed on GitHub at https://github.com/lsst-sqre/sasqua
    :hidden:
 
    User guide <user-guide/index>
-   API <api>
    Change log <changelog>
-   Contributing <dev/index>
-   CLI <cli>
+   Development <dev/index>
