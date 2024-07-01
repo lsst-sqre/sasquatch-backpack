@@ -1006,10 +1006,6 @@ scipy==1.13.1 \
     --hash=sha256:eccfa1906eacc02de42d70ef4aecea45415f5be17e72b61bafcfd329bdc52e94 \
     --hash=sha256:f26264b282b9da0952a024ae34710c2aff7d27480ee91a2e82b7b7073c24722f
     # via obspy
-setuptools==70.0.0 \
-    --hash=sha256:54faa7f2e8d2d11bcd2c07bed282eef1046b5c080d1c32add737d7b5817b1ad4 \
-    --hash=sha256:f211a66637b8fa059bb28183da127d4e86396c991a942b028c6650d4319c3fd0
-    # via obspy
 shapely==2.0.4 \
     --hash=sha256:011b77153906030b795791f2fdfa2d68f1a8d7e40bce78b029782ade3afe4f2f \
     --hash=sha256:03152442d311a5e85ac73b39680dd64a9892fa42bb08fd83b3bab4fe6999bfa0 \
@@ -1132,9 +1128,9 @@ urllib3==2.2.1 \
     #   requests
     #   types-requests
     #   usgs-libcomcat
-usgs-libcomcat==2.0.25 \
-    --hash=sha256:78a6589b6cf7d7bd8f90aab96691f91b96c0c9351b11b503921316defd6222e2 \
-    --hash=sha256:bc547270c6bdeb837e1123c06f718bd4ae0e813edcbb795c7095d338d5d10a06
+usgs-libcomcat==2.1 \
+    --hash=sha256:17c8dabf623ef807763dd0cd60bf8b72b611ff1ca762fb670028b859c0aea304 \
+    --hash=sha256:c4d87f89f448b3110fd5f1ab8c77e6169844d6e30f78e38c828a591a8d8fd3d4
     # via -r requirements/main.in
 xlsxwriter==3.2.0 \
     --hash=sha256:9977d0c661a72866a61f9f7a809e25ebbb0fb7036baa3b9fe74afcfca6b3cb8c \
