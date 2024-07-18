@@ -51,6 +51,8 @@ class USGSConfig:
         Directory path to the relevant source schema
         (src/sasquatchbackpack/schemas/schema_name_here.avsc), optional,
         defaults to src/sasquatchbackpack/schemas/usgs.avsc
+    cron_schema : `str`, optional
+        Directory path to the relevant source schema from a cronjob.
     """
 
     duration: timedelta
@@ -58,6 +60,10 @@ class USGSConfig:
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
     schema_file: str = "src/sasquatchbackpack/schemas/usgs.avsc"
+    cron_schema: str = (
+        "/opt/venv/lib/python3.12/site-packages/"
+        "sasquatchbackpack/schemas/usgs.avsc"
+    )
 
 
 class USGSSource(DataSource):
@@ -88,8 +94,12 @@ class USGSSource(DataSource):
         """Query the USGS API using the current provided parameters,
         then update results.
         """
-        with Path(self.config.schema_file).open("r") as file:
-            return file.read()
+        try:
+            with Path(self.config.schema_file).open("r") as file:
+                return file.read()
+        except FileNotFoundError:
+            with Path(self.config.cron_schema).open("r") as file:
+                return file.read()
 
     def get_records(self) -> list[dict]:
         """Call the USGS Comcat API and assembles records.
