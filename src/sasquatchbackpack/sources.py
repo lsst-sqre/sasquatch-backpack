@@ -57,7 +57,7 @@ class USGSConfig:
     radius: int
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
-    schema_file: str = "src/sasquatchbackpack/schemas/usgs.avsc"
+    schema_file: str = "./schemas/usgs.avsc"
 
 
 class USGSSource(DataSource):
