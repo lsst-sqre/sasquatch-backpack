@@ -1,17 +1,37 @@
 """Handles dispatch of backpack data to kafka."""
 
-__all__ = ["BackpackDispatcher", "DispatcherConfig"]
+__all__ = ["BackpackDispatcher", "DispatcherConfig", "DataSource"]
 
 import os
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
 
 import requests
 
-from sasquatchbackpack import sources
-
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
+
+
+class DataSource(ABC):
+    """Base class for all relevant backpack data sources.
+
+    Parameters
+    ----------
+    topic_name : str
+        Specific source name, used as an identifier
+    """
+
+    def __init__(self, topic_name: str) -> None:
+        self.topic_name = topic_name
+
+    @abstractmethod
+    def load_schema(self) -> str:
+        pass
+
+    @abstractmethod
+    def get_records(self) -> list[dict]:
+        pass
 
 
 @dataclass
@@ -50,9 +70,7 @@ class BackpackDispatcher:
         the Dispatcher
     """
 
-    def __init__(
-        self, source: sources.DataSource, config: DispatcherConfig
-    ) -> None:
+    def __init__(self, source: DataSource, config: DispatcherConfig) -> None:
         self.source = source
         self.config = config
         self.schema = Template(source.load_schema()).substitute(
