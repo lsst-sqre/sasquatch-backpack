@@ -7,15 +7,17 @@ sasquatch-backpack
 
 Sasquatch-backpack is a collection of APIs that feed into sasquatch.
 
-Install sasquatch-backpack from PyPI:
+The current APIs that run off of Sasquatch-backpack are:
+
+- `USGS Earthquake data <https://code.usgs.gov/ghsc/esi/libcomcat-python>`__
+
+Install Sasquatch-backpack from PyPI:
 
 .. code-block:: bash
 
    pip install sasquatch-backpack
 
-The current APIs that run off of sasquatch-backpack are:
-
-- USGS Earthquake data (`libcomcat <https://code.usgs.gov/ghsc/esi/libcomcat-python>`__)
+**All CLI interaction with Sasquatch-backpack is done sans hyphen. ("sasquatchbackpack", not "sasquatch-backpack"`)**
 
 Sasquatch-backpack also features CLI entrypoints for easy access to integrated APIs. See the `CLI Page <user-guide/cli.html>`__ for details.
 
