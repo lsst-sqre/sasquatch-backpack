@@ -75,4 +75,7 @@ Use this as an opportunity to debug your API calls so they work as intended befo
 Add a schema
 ============
 `Sasquatch <https://sasquatch.lsst.io>`__ (the wearer of the proverbial backpack), uses `Avro schemas <https://sasquatch.lsst.io/user-guide/avro.html>`__
-for data serialization. Navigate to ``src/sasquatchbackpack/schemas`` and create a ``.avsc`` file for each different API call you want to make.
+for data serialization. Navigate to ``src/sasquatchbackpack/schemas`` and create a folder for your API.
+Inside, create a ``.avsc`` file for each different API call you want to make. The contents of the file depends on the data in question, so
+make sure to look at what you're getting from your API call and use the doccumentation to create an accurate representation of that data that you'll be sending.
+
