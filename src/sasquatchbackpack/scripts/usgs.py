@@ -77,10 +77,10 @@ class USGSConfig:
     radius: int
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
-    schema_file: str = "src/sasquatchbackpack/schemas/usgs.avsc"
+    schema_file: str = "src/sasquatchbackpack/schemas/usgs/earthquake.avsc"
     cron_schema: str = (
         "/opt/venv/lib/python3.12/site-packages/"
-        "sasquatchbackpack/schemas/usgs.avsc"
+        "sasquatchbackpack/schemas/usgs/earthquake.avsc"
     )
 
 
