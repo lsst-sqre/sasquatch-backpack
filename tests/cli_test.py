@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from sasquatchbackpack import cli
+from sasquatchbackpack.commands import usgs
 
 
 @pytest.mark.parametrize(
@@ -124,7 +124,7 @@ def test_usgs_earthquake_data(
     runner = CliRunner()
 
     result = runner.invoke(
-        cli.usgs_earthquake_data,
+        usgs.usgs_earthquake_data,
         [
             "-d",
             str(duration[0]),

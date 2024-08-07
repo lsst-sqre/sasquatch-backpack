@@ -6,4 +6,3 @@ Python API
    :titlesonly:
 
    sasquatchbackpack.sasquatch
-   sasquatchbackpack.sources
