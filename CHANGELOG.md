@@ -15,7 +15,7 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 ### New features
 
-Reorganize file system to better support other APIs
+Reorganize project structure to better support other APIs
 
 ### Bug fixes
 
