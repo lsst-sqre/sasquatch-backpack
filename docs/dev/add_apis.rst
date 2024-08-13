@@ -40,7 +40,7 @@ Sasquatch-backpack uses `click <https://click.palletsprojects.com/en/8.1.x/>`__ 
 To add your API calls to the CLI, create a new python file in ``src/sasquatchbackpack/commands``
 and add your CLI functions inside. There should be one function for every distinct API call you want to make.
 
-At this point, you can populate these functions with calls to your API, printing
+Next, populate these functions with calls to your API, printing
 the results to console via ``click.echo`` (or ``click.secho`` if you want to get funky with the colors :P)
 To do so import the script in ``src/sasquatchbackpack/scripts`` that you made earlier, then
 feed in the relevant paremeters, and echo the results. This will be what is logged in argoCD later on
@@ -79,3 +79,100 @@ for data serialization. Navigate to ``src/sasquatchbackpack/schemas`` and create
 Inside, create a ``.avsc`` file for each different API call you want to make. The contents of the file depends on the data in question, so
 make sure to look at what you're getting from your API call and use the doccumentation to create an accurate representation of that data that you'll be sending.
 
+Add configs
+===========
+Going back to your ``src/sasquatchbackpack/scripts`` file, you'll want to add a dataclass for each different API call you want to make.
+Make sure to include all of the relevant parameters that you'll need to make that call, as well as two paths to the schema file and a topic name.
+
+.. code-block:: python
+
+    # Parameters up here
+    schema_file: str = "src/sasquatchbackpack/schemas/usgs/yourschemanamehere.avsc"
+    cron_schema: str = (
+        "/opt/venv/lib/python3.12/site-packages/"
+        "sasquatchbackpack/schemas/usgs/yourschemanamehere.avsc"
+    )
+    topic_name: str = "yourfunctionnamehere",
+
+The first path should be the local path to the schema and the second should be the path to the schema when running in a cron job.
+The topic name should be the name of your command.
+
+Add source
+==========
+Next, you'll make a source class, inhereting from ``sasquatchbackpack.sasquatch.DataSource``. This will require two methods:
+``load_schema()`` and ``get_records()``. First, the class's ``__init__`` should read in the config you made in the pervious step.
+You'll also want to call ``super().__init__(config.topic_name)`` inside. Otherwise, feel free to initialize your parameters as you will.
+
+``load_schema()`` can be copied 1 to 1 from the following:
+
+.. code-block:: python
+
+    def load_schema(self) -> str:
+        """Load the relevant schema."""
+        try:
+            with Path(self.config.schema_file).open("r") as file:
+                return file.read()
+        except FileNotFoundError:
+            with Path(self.config.cron_schema).open("r") as file:
+                return file.read()
+
+``get_records()`` should make an API call, then return the encoded results in an array.
+This should be surrounded with the following try:
+
+.. code-block:: python
+
+    try:
+        # API Call
+        # return results
+    except ConnectionError as ce:
+        raise ConnectionError(
+            f"A connection error occurred while fetching records: {ce}"
+        ) from ce
+
+Update CLI
+==========
+You'll want to add a dry run option to your CLI command. To do so, add the following to your CLI command
+
+.. code-block:: python
+
+    @click.option(
+        "--dry-run",
+        is_flag=True,
+        default=False,
+        help="Perform a trial run with no data being sent to Kafka.",
+    )
+
+
+Remember to also add ``dry_run: bool,  # noqa: FBT001`` as a parameter.
+You can add the funciton of the dry run flag after the body of the extant function with the following:
+
+.. code-block:: python
+
+    if dry_run:
+        click.echo("Dry run mode: No data will be sent to Kafka.")
+        return
+
+    click.echo("Sending data...")
+
+To actually send the data, simply import and instantiate the config and source objects you made in your
+``src/sasquatchbackpack/scripts`` file. Then, import ``sasquatchbackpack.sasquatch`` and add the following:
+
+.. code-block:: python
+
+    backpack_dispatcher = sasquatch.BackpackDispatcher(
+        source, sasquatch.DispatcherConfig()
+    )
+    result = backpack_dispatcher.post()
+
+    if "Error" in result:
+        click.secho(result, fg="red")
+    else:
+        click.secho("Data successfully sent!", fg="green")
+
+Note that the ``source`` object is simply the source you just instantiated.
+
+Test it!
+========
+Running the CLI command should now result in the data being posted to sasquatch!
+Specifically you can search `kafdrop on data-int <https://data-int.lsst.cloud/kafdrop/>`_
+for the ``lsst.backpack`` topic, and your data should show up there.
