@@ -86,13 +86,16 @@ Make sure to include all of the relevant parameters that you'll need to make tha
 
 .. code-block:: python
 
-    # Parameters up here
-    schema_file: str = "src/sasquatchbackpack/schemas/usgs/yourschemanamehere.avsc"
-    cron_schema: str = (
-        "/opt/venv/lib/python3.12/site-packages/"
-        "sasquatchbackpack/schemas/usgs/yourschemanamehere.avsc"
-    )
-    topic_name: str = "yourfunctionnamehere",
+    @dataclass
+    class MyConfig:
+        """I'm a docstring!"""
+        # Parameters up here
+        schema_file: str = "src/sasquatchbackpack/schemas/yourfoldernamehere/yourschemanamehere.avsc"
+        cron_schema: str = (
+            "/opt/venv/lib/python3.12/site-packages/"
+            "sasquatchbackpack/schemas/yourfoldernamehere/yourschemanamehere.avsc"
+        )
+        topic_name: str = "yourfunctionnamehere",
 
 The first path should be the local path to the schema and the second should be the path to the schema when running in a cron job.
 The topic name should be the name of your command.
@@ -100,8 +103,7 @@ The topic name should be the name of your command.
 Add source
 ==========
 Next, you'll make a source class, inhereting from ``sasquatchbackpack.sasquatch.DataSource``. This will require two methods:
-``load_schema()`` and ``get_records()``. First, the class's ``__init__`` should read in the config you made in the pervious step.
-You'll also want to call ``super().__init__(config.topic_name)`` inside. Otherwise, feel free to initialize your parameters as you will.
+``load_schema()`` and ``get_records()``.
 
 ``load_schema()`` can be copied 1 to 1 from the following:
 
@@ -128,6 +130,10 @@ This should be surrounded with the following try:
         raise ConnectionError(
             f"A connection error occurred while fetching records: {ce}"
         ) from ce
+
+
+The class's ``__init__`` should read in the config you made in the pervious step.
+You'll also want to call ``super().__init__(config.topic_name)`` inside. Otherwise, feel free to initialize your parameters as you will.
 
 Update CLI
 ==========

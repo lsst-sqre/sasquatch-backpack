@@ -17,7 +17,7 @@ Install Sasquatch-backpack from PyPI:
 
    pip install sasquatch-backpack
 
-**All CLI interaction with Sasquatch-backpack is done sans hyphen. ("sasquatchbackpack", not "sasquatch-backpack"`)**
+**All CLI interaction with Sasquatch-backpack is done sans hyphen. ("sasquatchbackpack", not "sasquatch-backpack")**
 
 Sasquatch-backpack also features CLI entrypoints for easy access to integrated APIs. See the `CLI Page <user-guide/cli.html>`__ for details.
 
