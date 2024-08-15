@@ -71,6 +71,8 @@ class USGSConfig:
         defaults to src/sasquatchbackpack/schemas/usgs.avsc
     cron_schema : `str`, optional
         Directory path to the relevant source schema from a cronjob.
+    topic_name : `str`, optional
+        Name of the the sasquatch topic
     """
 
     duration: timedelta
@@ -82,6 +84,7 @@ class USGSConfig:
         "/opt/venv/lib/python3.12/site-packages/"
         "sasquatchbackpack/schemas/usgs/earthquake.avsc"
     )
+    topic_name: str = "usgs_earthquake_data"
 
 
 class USGSSource(DataSource):
@@ -99,9 +102,8 @@ class USGSSource(DataSource):
     def __init__(
         self,
         config: USGSConfig,
-        topic_name: str = "usgs_earthquake_data",
     ) -> None:
-        super().__init__(topic_name)
+        super().__init__(config.topic_name)
         self.duration = config.duration
         self.config = config
         self.radius = config.radius
@@ -109,9 +111,7 @@ class USGSSource(DataSource):
         self.magnitude_bounds = config.magnitude_bounds
 
     def load_schema(self) -> str:
-        """Query the USGS API using the current provided parameters,
-        then update results.
-        """
+        """Load the relevant schema."""
         try:
             with Path(self.config.schema_file).open("r") as file:
                 return file.read()

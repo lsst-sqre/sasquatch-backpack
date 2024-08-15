@@ -4,7 +4,9 @@
 User guide
 ##########
 
-.. toctree::
-   :maxdepth: 2
+Sasquatch-backpack can be installed directly from PyPI and run as a command-line tool, but it is normally run via various `Phalanx <https://phalanx.lsst.io/>`__  cron-jobs.
 
-    CLI <cli>
+.. toctree::
+   :caption: Reference
+
+   cli
