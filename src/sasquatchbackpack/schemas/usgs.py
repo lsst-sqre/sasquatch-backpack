@@ -15,3 +15,10 @@ class EarthquakeSchema(AvroModel):
     longitude: float = field(metadata={"units": "degree"})
     depth: float = field(metadata={"units": "km"})
     magnitude: float = field(metadata={"units": "u.richter_magnitudes"})
+
+    class Meta:
+        """Schema metadata."""
+
+        namespace = "$namespace"
+        name = "$topic_name"
+        description = "Collection of earthquakes near the summit"
