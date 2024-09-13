@@ -7,7 +7,7 @@ from dataclasses_avroschema import AvroModel
 
 @dataclass
 class EarthquakeSchema(AvroModel):
-    """USGS Earthquake schema."""
+    """Collection of earthquakes near the summit."""
 
     timestamp: int
     id: str = field(metadata={"description": "unique earthquake id"})
@@ -20,5 +20,4 @@ class EarthquakeSchema(AvroModel):
         """Schema metadata."""
 
         namespace = "$namespace"
-        name = "$topic_name"
-        description = "Collection of earthquakes near the summit"
+        schema_name = "$topic_name"
