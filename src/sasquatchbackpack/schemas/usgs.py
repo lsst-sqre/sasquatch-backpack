@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from dataclasses_avroschema import AvroModel
+from dataclasses_avroschema.schema_generator import AvroModel
 
 
 @dataclass

@@ -2,11 +2,11 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from libcomcat.search import search
 
 from sasquatchbackpack.sasquatch import DataSource
+from sasquatchbackpack.schemas.usgs import EarthquakeSchema
 
 __all__ = ["USGSSource", "USGSConfig"]
 
@@ -79,11 +79,6 @@ class USGSConfig:
     radius: int
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
-    schema_file: str = "src/sasquatchbackpack/schemas/usgs/earthquake.avsc"
-    cron_schema: str = (
-        "/opt/venv/lib/python3.12/site-packages/"
-        "sasquatchbackpack/schemas/usgs/earthquake.avsc"
-    )
     topic_name: str = "usgs_earthquake_data"
 
 
@@ -106,18 +101,14 @@ class USGSSource(DataSource):
         super().__init__(config.topic_name)
         self.duration = config.duration
         self.config = config
+        self.schema = EarthquakeSchema.avro_schema().replace("double", "float")
         self.radius = config.radius
         self.coords = config.coords
         self.magnitude_bounds = config.magnitude_bounds
 
     def load_schema(self) -> str:
         """Load the relevant schema."""
-        try:
-            with Path(self.config.schema_file).open("r") as file:
-                return file.read()
-        except FileNotFoundError:
-            with Path(self.config.cron_schema).open("r") as file:
-                return file.read()
+        return self.schema
 
     def get_records(self) -> list[dict]:
         """Call the USGS Comcat API and assembles records.

@@ -6,6 +6,13 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-0.2.2'></a>
+## 0.2.2 (2024-09-18)
+
+### New features
+
+- Avro schemas are now generated via dataclass rather than being strictly typed
+
 <a id='changelog-0.2.1'></a>
 ## 0.2.1 (2024-08-15)
 
