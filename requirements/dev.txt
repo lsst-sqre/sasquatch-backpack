@@ -156,7 +156,7 @@ comm==0.2.2 \
     --hash=sha256:3fd7a84065306e07bea1773df6eb8282de51ba82f77c72f9c85716ab11fe980e \
     --hash=sha256:e6fb86cb70ff661ee8c9c14e7d36d6de3b4066f1441be4063df9c5009f0a64d3
     # via ipykernel
-coverage==7.6.1 \
+coverage[toml]==7.6.1 \
     --hash=sha256:06a737c882bd26d0d6ee7269b20b12f14a8704807a01056c80bb881a4b2ce6ca \
     --hash=sha256:07e2ca0ad381b91350c0ed49d52699b625aab2b44b65e1b4e02fa9df0e92ad2d \
     --hash=sha256:0c0420b573964c760df9e9e86d1a9a622d0d27f417e1a949a8a66dd7bcee7bc6 \
@@ -266,7 +266,7 @@ distlib==0.3.8 \
     --hash=sha256:034db59a0b96f8ca18035f36290806a9a6e6bd9d1ff91e45a7f172eb17e51784 \
     --hash=sha256:1530ea13e350031b6312d8580ddb6b27a104275a31106523b8f123787f494f64
     # via virtualenv
-documenteer==1.4.0 \
+documenteer[guide]==1.4.0 \
     --hash=sha256:759fdbf4554449a74df9fb10cfe91984bc1272f0a2c6c688817d1a2525c72881 \
     --hash=sha256:e456e21cb6d0be659b5297de87cb3e60d9bf0fffb63e316dbaba20b38a5f70ee
     # via -r requirements/dev.in
@@ -457,7 +457,7 @@ linkify-it-py==2.0.3 \
     --hash=sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048 \
     --hash=sha256:6bcbc417b0ac14323382aef5c5192c0075bf8a9d6b41820a2b66371eac6b6d79
     # via markdown-it-py
-markdown-it-py==3.0.0 \
+markdown-it-py[linkify]==3.0.0 \
     --hash=sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1 \
     --hash=sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb
     # via
@@ -632,9 +632,9 @@ pluggy==1.5.0 \
     --hash=sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1 \
     --hash=sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669
     # via pytest
-pre-commit==3.8.0 \
-    --hash=sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af \
-    --hash=sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f
+pre-commit==4.0.0 \
+    --hash=sha256:0ca2341cf94ac1865350970951e54b1a50521e57b7b500403307aed4315a1234 \
+    --hash=sha256:5d9807162cc5537940f94f266cbe2d716a75cfad0d78a317a92cac16287cfed6
     # via -r requirements/dev.in
 prompt-toolkit==3.0.47 \
     --hash=sha256:0d7bfa67001d5e39d02c224b663abc33687405033a8c422d0d675a5a13361d10 \
@@ -1134,13 +1134,6 @@ scriv==1.5.1 \
     --hash=sha256:30ae9ff8d144f8e0cf394c4e1d379542f1b3823767642955b54ec40dc00b32b6 \
     --hash=sha256:a3adc657733b4124fcb54527a5f3daab0d3c300de82d0fd2b9b297b243151b78
     # via -r requirements/dev.in
-setuptools==75.1.0 \
-    --hash=sha256:35ab7fd3bcd95e6b7fd704e4a1539513edad446c097797f2985e0e4b960772f2 \
-    --hash=sha256:d59a21b17a275fb872a9c3dae73963160ae079f1049ed956880cd7c09b120538
-    # via
-    #   -c requirements/main.txt
-    #   documenteer
-    #   sphinxcontrib-bibtex
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
