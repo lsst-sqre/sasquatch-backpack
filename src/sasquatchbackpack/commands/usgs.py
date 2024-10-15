@@ -1,11 +1,14 @@
 """USGS CLI."""
 
+import asyncio
 from datetime import timedelta
+from string import Template
 
 import click
 
 from sasquatchbackpack import sasquatch
-from sasquatchbackpack.scripts import usgs
+from sasquatchbackpack.schemas import usgs as schemas
+from sasquatchbackpack.scripts import usgs as scripts
 
 DEFAULT_RADIUS = 400
 
@@ -154,7 +157,7 @@ def usgs_earthquake_data(
     days, hours = duration
     total_duration = timedelta(days=days, hours=hours)
 
-    results = usgs.search_api(
+    results = scripts.search_api(
         total_duration,
         radius,
         coords,
@@ -180,8 +183,10 @@ def usgs_earthquake_data(
 
     click.echo("Sending data...")
 
-    config = usgs.USGSConfig(total_duration, radius, coords, magnitude_bounds)
-    source = usgs.USGSSource(config)
+    config = scripts.USGSConfig(
+        total_duration, radius, coords, magnitude_bounds
+    )
+    source = scripts.USGSSource(config)
 
     backpack_dispatcher = sasquatch.BackpackDispatcher(
         source, sasquatch.DispatcherConfig()
@@ -192,3 +197,34 @@ def usgs_earthquake_data(
         click.secho(result, fg="red")
     else:
         click.secho("Data successfully sent!", fg="green")
+
+
+@click.command()
+def test_redis() -> None:
+    """Test redis implementation."""
+    erm = schemas.EarthquakeRedisManager("redis://localhost:6379/0")
+    erm.start_redis()
+
+    config = scripts.USGSConfig(
+        timedelta(days=10),
+        DEFAULT_RADIUS,
+        DEFAULT_COORDS,
+        DEFAULT_MAGNITUDE_BOUNDS,
+    )
+    source = scripts.USGSSource(config)
+
+    records = source.get_records()
+    schma = Template(source.load_schema()).substitute(
+        {
+            "namespace": "self.config.namespace",
+            "topic_name": "self.source.topic_name",
+        }
+    )
+
+    payload = {"value_schema": schma, "records": records}  # noqa: F841
+
+    for record in records:
+        # Using earthquake id as redis key
+        asyncio.run(erm.store(record["value"]["id"], record))
+
+    # asyncio.run(erm.get(record["value"]["id"])) noqa
