@@ -2,7 +2,6 @@
 
 import asyncio
 from datetime import timedelta
-from string import Template
 
 import click
 
@@ -202,7 +201,7 @@ def usgs_earthquake_data(
 @click.command()
 def test_redis() -> None:
     """Test redis implementation."""
-    erm = schemas.EarthquakeRedisManager("redis://localhost:6379/0")
+    erm = schemas.EarthquakeRedisManager(address="redis://localhost:6379/0")
     erm.start_redis()
 
     config = scripts.USGSConfig(
@@ -214,17 +213,20 @@ def test_redis() -> None:
     source = scripts.USGSSource(config)
 
     records = source.get_records()
-    schma = Template(source.load_schema()).substitute(
-        {
-            "namespace": "self.config.namespace",
-            "topic_name": "self.source.topic_name",
-        }
-    )
-
-    payload = {"value_schema": schma, "records": records}  # noqa: F841
 
     for record in records:
         # Using earthquake id as redis key
-        asyncio.run(erm.store(record["value"]["id"], record))
 
-    # asyncio.run(erm.get(record["value"]["id"])) noqa
+        asyncio.run(
+            erm.store(
+                record["value"]["id"],
+                schemas.EarthquakeSchema(
+                    timestamp=record["value"]["timestamp"],
+                    id=record["value"]["id"],
+                    latitude=record["value"]["latitude"],
+                    longitude=record["value"]["longitude"],
+                    depth=record["value"]["depth"],
+                    magnitude=record["value"]["depth"],
+                ),
+            )
+        )

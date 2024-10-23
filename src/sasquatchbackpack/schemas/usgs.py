@@ -27,11 +27,11 @@ class EarthquakeRedisManager:
     """Manage redis for USGS."""
 
     def __init__(self, address: str) -> None:
-        self.address = address
         self.model = None
+        self.address = address
 
     def start_redis(self) -> None:
-        redis_client = redis.Redis()
+        redis_client = redis.Redis.from_url(self.address)
         self.model = PydanticRedisStorage(
             datatype=EarthquakeSchema, redis=redis_client
         )
