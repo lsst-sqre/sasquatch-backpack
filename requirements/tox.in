@@ -11,4 +11,5 @@
 -c dev.txt
 
 tox
+tox-docker
 tox-uv
