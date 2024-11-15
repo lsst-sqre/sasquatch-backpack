@@ -202,8 +202,6 @@ def usgs_earthquake_data(
 def test_redis() -> None:
     """Test redis implementation."""
     erm = schemas.EarthquakeRedisManager(address="redis://localhost:6379/0")
-    erm.start_redis()
-
     config = scripts.USGSConfig(
         timedelta(days=10),
         DEFAULT_RADIUS,
@@ -214,19 +212,21 @@ def test_redis() -> None:
 
     records = source.get_records()
 
-    for record in records:
-        # Using earthquake id as redis key
+    # for record in records:
+    # Using earthquake id as redis key
 
-        asyncio.run(
-            erm.store(
-                record["value"]["id"],
-                schemas.EarthquakeSchema(
-                    timestamp=record["value"]["timestamp"],
-                    id=record["value"]["id"],
-                    latitude=record["value"]["latitude"],
-                    longitude=record["value"]["longitude"],
-                    depth=record["value"]["depth"],
-                    magnitude=record["value"]["depth"],
-                ),
-            )
-        )
+    record = records[0]
+    asyncio.run(
+        erm.store(
+            record["value"]["id"],
+            schemas.EarthquakeSchema(
+                timestamp=record["value"]["timestamp"],
+                id=record["value"]["id"],
+                latitude=record["value"]["latitude"],
+                longitude=record["value"]["longitude"],
+                depth=record["value"]["depth"],
+                magnitude=record["value"]["depth"],
+            ),
+        ),
+        debug=True,
+    )

@@ -27,20 +27,19 @@ class EarthquakeRedisManager:
     """Manage redis for USGS."""
 
     def __init__(self, address: str) -> None:
-        self.model = None
         self.address = address
-
-    def start_redis(self) -> None:
-        redis_client = redis.Redis.from_url(self.address)
+        connection = redis.from_url(self.address)
         self.model = PydanticRedisStorage(
-            datatype=EarthquakeSchema, redis=redis_client
+            datatype=EarthquakeSchema, redis=connection
         )
 
-    async def store(self, key: str, item: EarthquakeSchema) -> None:
+    async def store(self, key: str, item: EarthquakeSchema) -> bool:
         if self.model is None:
-            return
-
+            raise RuntimeError("Model is undefined.")
         await self.model.store(key, item)
+        return True
 
     async def get(self, key: str) -> EarthquakeSchema:
+        if self.model is None:
+            raise RuntimeError("Model is undefined.")
         return await self.model.get(key)
