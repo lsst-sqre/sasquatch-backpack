@@ -1,6 +1,5 @@
 """USGS CLI."""
 
-import asyncio
 from datetime import timedelta
 
 import click
@@ -214,19 +213,17 @@ def test_redis() -> None:
 
     # for record in records:
     # Using earthquake id as redis key
-
     record = records[0]
-    asyncio.run(
-        erm.store(
-            record["value"]["id"],
-            schemas.EarthquakeSchema(
-                timestamp=record["value"]["timestamp"],
-                id=record["value"]["id"],
-                latitude=record["value"]["latitude"],
-                longitude=record["value"]["longitude"],
-                depth=record["value"]["depth"],
-                magnitude=record["value"]["depth"],
-            ),
+    erm.store(
+        record["value"]["id"],
+        schemas.EarthquakeSchema(
+            timestamp=record["value"]["timestamp"],
+            id=record["value"]["id"],
+            latitude=record["value"]["latitude"],
+            longitude=record["value"]["longitude"],
+            depth=record["value"]["depth"],
+            magnitude=record["value"]["depth"],
         ),
-        debug=True,
     )
+
+    erm.get(record["value"]["id"])

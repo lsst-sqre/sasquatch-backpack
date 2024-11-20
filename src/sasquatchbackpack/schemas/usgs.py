@@ -1,5 +1,7 @@
 """USGS Schemas."""
 
+import asyncio
+
 import redis.asyncio as redis
 from dataclasses_avroschema.pydantic import AvroBaseModel
 from pydantic import Field
@@ -10,11 +12,13 @@ class EarthquakeSchema(AvroBaseModel):
     """Collection of earthquakes near the summit."""
 
     timestamp: int
-    id: str = Field(metadata={"description": "unique earthquake id"})
-    latitude: float = Field(metadata={"units": "degree"})
-    longitude: float = Field(metadata={"units": "degree"})
-    depth: float = Field(metadata={"units": "km"})
-    magnitude: float = Field(metadata={"units": "u.richter_magnitudes"})
+    id: str = Field(description="unique earthquake id")
+    latitude: float = Field(json_schema_extra={"units": "degree"})
+    longitude: float = Field(json_schema_extra={"units": "degree"})
+    depth: float = Field(json_schema_extra={"units": "km"})
+    magnitude: float = Field(
+        json_schema_extra={"units": "u.richter_magnitudes"}
+    )
 
     class Meta:
         """Schema metadata."""
@@ -32,14 +36,17 @@ class EarthquakeRedisManager:
         self.model = PydanticRedisStorage(
             datatype=EarthquakeSchema, redis=connection
         )
+        self.loop = asyncio.new_event_loop()
 
-    async def store(self, key: str, item: EarthquakeSchema) -> bool:
+    def store(self, key: str, item: EarthquakeSchema) -> None:
         if self.model is None:
             raise RuntimeError("Model is undefined.")
-        await self.model.store(key, item)
-        return True
+        self.loop.run_until_complete(self.model.store(key, item))
 
-    async def get(self, key: str) -> EarthquakeSchema:
+    def get(self, key: str) -> EarthquakeSchema:
         if self.model is None:
             raise RuntimeError("Model is undefined.")
-        return await self.model.get(key)
+        target = self.loop.run_until_complete(self.model.get(key))
+        if target is None:
+            raise LookupError(f"Entry with key of {key} could not be found")
+        return target
