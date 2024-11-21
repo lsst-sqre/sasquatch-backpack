@@ -136,22 +136,29 @@ cannot excede your provided maximum magnitude ({upper})."""
     callback=check_magnitude_bounds,
 )
 @click.option(
-    "--dry-run",
+    "--post",
     is_flag=True,
     default=False,
-    help="Perform a trial run with no data being sent to Kafka.",
+    help=(
+        "Allows the user to specify that the API output should be "
+        "posted to kafka"
+    ),
 )
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
-    dry_run: bool,  # noqa: FBT001
+    post: bool,  # noqa: FBT001
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
     to console. Optionally, also allows the user to post the
     queried data to kafka.
     """
+    click.echo(
+        f"Querying USGS with post mode {"enabled" if post else "disabled"}..."
+    )
+
     days, hours = duration
     total_duration = timedelta(days=days, hours=hours)
 
@@ -175,11 +182,11 @@ def usgs_earthquake_data(
         click.echo("------")
         return
 
-    if dry_run:
-        click.echo("Dry run mode: No data will be sent to Kafka.")
+    if not post:
+        click.echo("Post mode is disabled: No data will be sent to Kafka.")
         return
 
-    click.echo("Sending data...")
+    click.echo("Post mode enabled: Sending data...")
 
     config = scripts.USGSConfig(
         total_duration, radius, coords, magnitude_bounds

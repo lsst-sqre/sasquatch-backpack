@@ -55,6 +55,8 @@ class DispatcherConfig:
         default=os.getenv("BACKPACK_NAMESPACE", "lsst.backpack")
     )
     """Sasquatch namespace for the topic"""
+    redis_address: str = "redis://localhost:6379/0"
+    """Address of Redis server"""
 
 
 class BackpackDispatcher:
@@ -79,6 +81,7 @@ class BackpackDispatcher:
                 "topic_name": self.source.topic_name,
             }
         )
+        self.redis_address = config.redis_address
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
