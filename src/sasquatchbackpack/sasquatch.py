@@ -9,8 +9,13 @@ from string import Template
 
 import requests
 
+from sasquatchbackpack.schemas import usgs as schemas
+
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
+
+# ruff: noqa:TD002
+# ruff: noqa:TD003
 
 
 class DataSource(ABC):
@@ -31,6 +36,10 @@ class DataSource(ABC):
 
     @abstractmethod
     def get_records(self) -> list[dict]:
+        pass
+
+    @abstractmethod
+    def get_redis_key(self, datapoint: dict) -> str:
         pass
 
 
@@ -81,7 +90,7 @@ class BackpackDispatcher:
                 "topic_name": self.source.topic_name,
             }
         )
-        self.redis_address = config.redis_address
+        self.redis = schemas.EarthquakeRedisManager(config.redis_address)
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -138,6 +147,9 @@ class BackpackDispatcher:
         """
         records = self.source.get_records()
 
+        # TODO: Check redis for records, and remove matches from list
+        # All redis entris begin with their
+
         payload = {"value_schema": self.schema, "records": records}
 
         url = (
@@ -161,5 +173,7 @@ class BackpackDispatcher:
             response.raise_for_status()  # Raises HTTPError for bad responses
         except requests.RequestException as e:
             return f"Error POSTing data: {e}"
+
+        # TODO: Once post is successful add remaining records to redis
 
         return response.text

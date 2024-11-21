@@ -14,6 +14,9 @@ DEFAULT_COORDS = (-30.22573200864174, -70.73932987127506)
 
 DEFAULT_MAGNITUDE_BOUNDS = (2, 10)
 
+# ruff: noqa:TD002
+# ruff: noqa:TD003
+
 
 def check_duration(
     ctx: click.Context, param: dict, value: tuple[int, int]
@@ -169,6 +172,8 @@ def usgs_earthquake_data(
         magnitude_bounds,
     )
 
+    # TODO: Add CLI feedback on what items are cached to redis
+    # and which are new
     if len(results) > 0:
         click.secho("SUCCESS!", fg="green")
         click.echo("------")
