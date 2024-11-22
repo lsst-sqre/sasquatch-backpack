@@ -155,3 +155,6 @@ class USGSSource(DataSource):
         # Redis keys are formatted "topic_name:key_value"
         # to keep data from different APIs discreet
         return f"{self.topic_name}:{datapoint["value"]["id"]}"
+
+    # Might need a construct schema method to allow redis to encode data
+    # if avro is not made for that

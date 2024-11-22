@@ -136,6 +136,29 @@ class BackpackDispatcher:
 
         return response.text
 
+    def _remove_redis_duplicates(self, records: list[dict]) -> list[dict]:
+        """Check the redis server for any duplicate data points
+        present in the provided records, and return a list with them removed.
+
+        Parameters
+        ----------
+        records : list[dict]
+            Output of a source.get_records() call.
+
+        Returns
+        -------
+        final : list[dict]
+            List with duplicate elements in common with those
+            on the redis server removed.
+        """
+        final = []
+
+        for record in records:
+            if self.redis.get(self.source.get_redis_key(record)) is None:
+                final.append(record)  # noqa: PERF401
+
+        return final
+
     def post(self) -> str:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
@@ -145,10 +168,7 @@ class BackpackDispatcher:
         response text : str
             The results of the POST request in string format
         """
-        records = self.source.get_records()
-
-        # TODO: Check redis for records, and remove matches from list
-        # All redis entris begin with their
+        records = self._remove_redis_duplicates(self.source.get_records())
 
         payload = {"value_schema": self.schema, "records": records}
 
@@ -174,6 +194,9 @@ class BackpackDispatcher:
         except requests.RequestException as e:
             return f"Error POSTing data: {e}"
 
-        # TODO: Once post is successful add remaining records to redis
+        for record in records:
+            self.redis.store(
+                self.config.get_redis_key(record),
+            )
 
         return response.text

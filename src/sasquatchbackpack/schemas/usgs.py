@@ -43,10 +43,7 @@ class EarthquakeRedisManager:
             raise RuntimeError("Model is undefined.")
         self.loop.run_until_complete(self.model.store(key, item))
 
-    def get(self, key: str) -> EarthquakeSchema:
+    def get(self, key: str) -> EarthquakeSchema | None:
         if self.model is None:
             raise RuntimeError("Model is undefined.")
-        target = self.loop.run_until_complete(self.model.get(key))
-        if target is None:
-            raise LookupError(f"Entry with key of {key} could not be found")
-        return target
+        return self.loop.run_until_complete(self.model.get(key))
