@@ -196,7 +196,15 @@ class BackpackDispatcher:
 
         for record in records:
             self.redis.store(
-                self.config.get_redis_key(record),
+                self.source.get_redis_key(record),
+                schemas.EarthquakeSchema(
+                    timestamp=0,
+                    id="",
+                    latitude=0,
+                    longitude=0,
+                    depth=0,
+                    magnitude=0,
+                ),
             )
 
         return response.text
