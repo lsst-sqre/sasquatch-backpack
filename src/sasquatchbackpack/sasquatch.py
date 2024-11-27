@@ -2,11 +2,13 @@
 
 __all__ = ["BackpackDispatcher", "DispatcherConfig", "DataSource"]
 
+import asyncio
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
 
+import redis.asyncio as redis
 import requests
 
 from sasquatchbackpack.schemas import usgs as schemas
@@ -41,6 +43,26 @@ class DataSource(ABC):
     @abstractmethod
     def get_redis_key(self, datapoint: dict) -> str:
         pass
+
+
+class RedisManager:
+    """Manage redis for USGS."""
+
+    def __init__(self, address: str) -> None:
+        self.address = address
+        self.model = redis.from_url(self.address)
+
+        self.loop = asyncio.new_event_loop()
+
+    def store(self, key: str, item: set) -> None:
+        if self.model is None:
+            raise RuntimeError("Model is undefined.")
+        self.loop.run_until_complete(self.model.hset(key, item))
+
+    def get(self, key: str) -> set:
+        if self.model is None:
+            raise RuntimeError("Model is undefined.")
+        return self.loop.run_until_complete(self.model.get(key))
 
 
 @dataclass
@@ -90,7 +112,7 @@ class BackpackDispatcher:
                 "topic_name": self.source.topic_name,
             }
         )
-        self.redis = schemas.EarthquakeRedisManager(config.redis_address)
+        self.redis = RedisManager(config.redis_address)
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.

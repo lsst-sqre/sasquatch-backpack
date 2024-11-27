@@ -165,6 +165,14 @@ def usgs_earthquake_data(
     days, hours = duration
     total_duration = timedelta(days=days, hours=hours)
 
+    config = scripts.USGSConfig(
+        total_duration, radius, coords, magnitude_bounds
+    )
+    source = scripts.USGSSource(config)
+    backpack_dispatcher = sasquatch.BackpackDispatcher(
+        source, sasquatch.DispatcherConfig()
+    )
+
     results = scripts.search_api(
         total_duration,
         radius,
@@ -193,14 +201,6 @@ def usgs_earthquake_data(
 
     click.echo("Post mode enabled: Sending data...")
 
-    config = scripts.USGSConfig(
-        total_duration, radius, coords, magnitude_bounds
-    )
-    source = scripts.USGSSource(config)
-
-    backpack_dispatcher = sasquatch.BackpackDispatcher(
-        source, sasquatch.DispatcherConfig()
-    )
     result = backpack_dispatcher.post()
 
     if "Error" in result:
