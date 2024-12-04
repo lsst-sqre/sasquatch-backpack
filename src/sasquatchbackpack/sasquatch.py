@@ -11,8 +11,6 @@ from string import Template
 import redis.asyncio as redis
 import requests
 
-from sasquatchbackpack.schemas import usgs as schemas
-
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
@@ -54,12 +52,12 @@ class RedisManager:
 
         self.loop = asyncio.new_event_loop()
 
-    def store(self, key: str, item: set) -> None:
+    def store(self, key: str, item: str = "value") -> None:
         if self.model is None:
             raise RuntimeError("Model is undefined.")
-        self.loop.run_until_complete(self.model.hset(key, item))
+        self.loop.run_until_complete(self.model.set(key, item))
 
-    def get(self, key: str) -> set:
+    def get(self, key: str) -> str:
         if self.model is None:
             raise RuntimeError("Model is undefined.")
         return self.loop.run_until_complete(self.model.get(key))
@@ -181,16 +179,24 @@ class BackpackDispatcher:
 
         return final
 
-    def post(self) -> str:
+    def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
 
         Returns
         -------
-        response text : str
+        response-text : str
             The results of the POST request in string format
+        records : list
+            List of earthquakes with those already stored on remote removed
         """
         records = self._remove_redis_duplicates(self.source.get_records())
+
+        if len(records) == 0:
+            return (
+                "Warning: All entries already present, aborting POST request",
+                records,
+            )
 
         payload = {"value_schema": self.schema, "records": records}
 
@@ -213,20 +219,11 @@ class BackpackDispatcher:
                 timeout=10,
             )
             response.raise_for_status()  # Raises HTTPError for bad responses
+
         except requests.RequestException as e:
-            return f"Error POSTing data: {e}"
+            return f"Error POSTing data: {e}", records
 
         for record in records:
-            self.redis.store(
-                self.source.get_redis_key(record),
-                schemas.EarthquakeSchema(
-                    timestamp=0,
-                    id="",
-                    latitude=0,
-                    longitude=0,
-                    depth=0,
-                    magnitude=0,
-                ),
-            )
+            self.redis.store(self.source.get_redis_key(record))
 
-        return response.text
+        return response.text, records

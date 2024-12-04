@@ -5,7 +5,6 @@ from datetime import timedelta
 import click
 
 from sasquatchbackpack import sasquatch
-from sasquatchbackpack.schemas import usgs as schemas
 from sasquatchbackpack.scripts import usgs as scripts
 
 DEFAULT_RADIUS = 400
@@ -201,18 +200,38 @@ def usgs_earthquake_data(
 
     click.echo("Post mode enabled: Sending data...")
 
-    result = backpack_dispatcher.post()
+    result, records = backpack_dispatcher.post()
 
     if "Error" in result:
         click.secho(result, fg="red")
+    elif "Warning" in result:
+        click.secho(result, fg="yellow")
     else:
         click.secho("Data successfully sent!", fg="green")
+        click.echo("The following items were added to Kafka:")
+
+        click.echo("------")
+        for record in records:
+            value = record["value"]
+            click.echo(
+                f"{value['id']} "
+                f"({value['latitude']}, {value['longitude']}) "
+                f"{value['depth']} km "
+                f"M{value['magnitude']}"
+            )
+        click.echo("------")
+
+        click.echo(
+            "All entries missing from this list "
+            "have been identified as already present in Kafka."
+        )
 
 
+# Should be a test
 @click.command()
-def test_redis() -> None:
+def test_usgs_redis() -> None:
     """Test redis implementation."""
-    erm = schemas.EarthquakeRedisManager(address="redis://localhost:6379/0")
+    erm = sasquatch.RedisManager(address="redis://localhost:6379/0")
     config = scripts.USGSConfig(
         timedelta(days=10),
         DEFAULT_RADIUS,
@@ -227,15 +246,7 @@ def test_redis() -> None:
     # Using earthquake id as redis key
     record = records[0]
     erm.store(
-        record["value"]["id"],
-        schemas.EarthquakeSchema(
-            timestamp=record["value"]["timestamp"],
-            id=record["value"]["id"],
-            latitude=record["value"]["latitude"],
-            longitude=record["value"]["longitude"],
-            depth=record["value"]["depth"],
-            magnitude=record["value"]["depth"],
-        ),
+        source.get_redis_key(record),
     )
-
-    erm.get(record["value"]["id"])
+    key = source.get_redis_key(record)
+    click.echo(f"Key '{key}' returns: {erm.get(key)}")
