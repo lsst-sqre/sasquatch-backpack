@@ -231,7 +231,7 @@ def usgs_earthquake_data(
 @click.command()
 def test_usgs_redis() -> None:
     """Test redis implementation."""
-    erm = sasquatch.RedisManager(address="redis://localhost:6379/0")
+    erm = sasquatch.RedisManager(address="redis://localhost/0")
     config = scripts.USGSConfig(
         timedelta(days=10),
         DEFAULT_RADIUS,
