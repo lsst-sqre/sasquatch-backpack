@@ -1,6 +1,6 @@
 """Handles dispatch of backpack data to kafka."""
 
-__all__ = ["BackpackDispatcher", "DispatcherConfig", "DataSource"]
+__all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
 
 import asyncio
 import os
@@ -134,8 +134,7 @@ class BackpackDispatcher:
             return f"Error getting cluster ID: {e}"
 
         topic_config = {
-            "topic_name": f"{self.config.namespace}."
-            f"{self.source.topic_name}",
+            "topic_name": f"{self.config.namespace}.{self.source.topic_name}",
             "partitions_count": self.config.partitions_count,
             "replication_factor": self.config.replication_factor,
         }

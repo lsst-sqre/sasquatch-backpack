@@ -8,7 +8,7 @@ from libcomcat.search import search
 from sasquatchbackpack.sasquatch import DataSource
 from sasquatchbackpack.schemas.usgs import EarthquakeSchema
 
-__all__ = ["USGSSource", "USGSConfig"]
+__all__ = ["USGSConfig", "USGSSource"]
 
 
 def search_api(
@@ -154,4 +154,4 @@ class USGSSource(DataSource):
         """
         # Redis keys are formatted "topic_name:key_value"
         # to keep data from different APIs discreet
-        return f"{self.topic_name}:{datapoint["value"]["id"]}"
+        return f"{self.topic_name}:{datapoint['value']['id']}"

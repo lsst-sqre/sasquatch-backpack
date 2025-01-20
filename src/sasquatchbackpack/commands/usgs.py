@@ -158,7 +158,7 @@ def usgs_earthquake_data(
     queried data to kafka.
     """
     click.echo(
-        f"Querying USGS with post mode {"enabled" if post else "disabled"}..."
+        f"Querying USGS with post mode {'enabled' if post else 'disabled'}..."
     )
 
     days, hours = duration
