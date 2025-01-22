@@ -84,7 +84,9 @@ class DispatcherConfig:
         default=os.getenv("BACKPACK_NAMESPACE", "lsst.backpack")
     )
     """Sasquatch namespace for the topic"""
-    redis_address: str = "redis://localhost/0"
+    redis_address: str = field(
+        default=os.getenv("BACKPACK_REDIS_URL", "redis://localhost:6379/0")
+    )
     """Address of Redis server"""
 
 
