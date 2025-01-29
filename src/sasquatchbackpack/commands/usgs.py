@@ -1,5 +1,6 @@
 """USGS CLI."""
 
+import os
 from datetime import timedelta
 
 import click
@@ -167,6 +168,7 @@ def usgs_earthquake_data(
     config = scripts.USGSConfig(
         total_duration, radius, coords, magnitude_bounds
     )
+    click.echo(os.getenv("BACKPACK_REDIS_URL", "redis://localhost:6379/0"))
     source = scripts.USGSSource(config)
     backpack_dispatcher = sasquatch.BackpackDispatcher(
         source, sasquatch.DispatcherConfig()
