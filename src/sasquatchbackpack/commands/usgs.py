@@ -226,28 +226,3 @@ def usgs_earthquake_data(
             "All entries missing from this list "
             "have been identified as already present in Kafka."
         )
-
-
-# Should be a test
-@click.command()
-def test_usgs_redis() -> None:
-    """Test redis implementation."""
-    erm = sasquatch.RedisManager(address="redis://localhost/0")
-    config = scripts.USGSConfig(
-        timedelta(days=10),
-        DEFAULT_RADIUS,
-        DEFAULT_COORDS,
-        DEFAULT_MAGNITUDE_BOUNDS,
-    )
-    source = scripts.USGSSource(config)
-
-    records = source.get_records()
-
-    # for record in records:
-    # Using earthquake id as redis key
-    record = records[0]
-    erm.store(
-        source.get_redis_key(record),
-    )
-    key = source.get_redis_key(record)
-    click.echo(f"Key '{key}' returns: {erm.get(key)}")

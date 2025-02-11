@@ -12,4 +12,3 @@ def main() -> None:
 
 
 main.add_command(usgs.usgs_earthquake_data)
-main.add_command(usgs.test_usgs_redis)

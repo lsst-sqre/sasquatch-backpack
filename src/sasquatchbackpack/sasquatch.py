@@ -44,7 +44,13 @@ class DataSource(ABC):
 
 
 class RedisManager:
-    """Manage redis for USGS."""
+    """Manage redis operations for backpack.
+
+    Parameters
+    ----------
+    address : str
+        Address where redis server can be accessed.
+    """
 
     def __init__(self, address: str) -> None:
         self.address = address
@@ -53,13 +59,30 @@ class RedisManager:
         self.loop = asyncio.new_event_loop()
 
     def store(self, key: str, item: str = "value") -> None:
-        if self.model is None:
-            raise RuntimeError("Model is undefined.")
+        """Store a key value pair in the provided redis server.
+
+        Parameters
+        ----------
+        key : str
+            Key that will be used to access the stored data.
+        item : str
+            Value that will be stored. Defaults to "value".
+        """
         self.loop.run_until_complete(self.model.set(key, item))
 
-    def get(self, key: str) -> str:
-        if self.model is None:
-            raise RuntimeError("Model is undefined.")
+    def get(self, key: str) -> str | None:
+        """Query a key from the provided redis server and return its value.
+
+        Parameters
+        ----------
+        key : str
+            Key that will be used to query the stored data.
+
+        Return
+        ------
+        str
+            Queried value. Returns None if value is not found.
+        """
         return self.loop.run_until_complete(self.model.get(key))
 
 
