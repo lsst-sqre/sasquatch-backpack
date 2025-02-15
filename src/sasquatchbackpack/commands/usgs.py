@@ -168,9 +168,7 @@ def usgs_earthquake_data(
         total_duration, radius, coords, magnitude_bounds
     )
     source = scripts.USGSSource(config)
-    backpack_dispatcher = sasquatch.BackpackDispatcher(
-        source, sasquatch.DispatcherConfig()
-    )
+    backpack_dispatcher = sasquatch.BackpackDispatcher(source)
 
     results = scripts.search_api(
         total_duration,

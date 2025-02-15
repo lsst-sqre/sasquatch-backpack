@@ -126,16 +126,22 @@ class BackpackDispatcher:
         the Dispatcher
     """
 
-    def __init__(self, source: DataSource, config: DispatcherConfig) -> None:
+    def __init__(
+        self, source: DataSource, redis_address: str = "default"
+    ) -> None:
         self.source = source
-        self.config = config
+        self.config = DispatcherConfig()
         self.schema = Template(source.load_schema()).substitute(
             {
                 "namespace": self.config.namespace,
                 "topic_name": self.source.topic_name,
             }
         )
-        self.redis = RedisManager(config.redis_address)
+        self.redis = RedisManager(
+            self.config.redis_address
+            if redis_address == "default"
+            else redis_address
+        )
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -180,7 +186,7 @@ class BackpackDispatcher:
 
         return response.text
 
-    def _remove_redis_duplicates(self, records: list[dict]) -> list[dict]:
+    def _remove_redis_duplicates(self) -> list[dict]:
         """Check the redis server for any duplicate data points
         present in the provided records, and return a list with them removed.
 
@@ -195,13 +201,12 @@ class BackpackDispatcher:
             List with duplicate elements in common with those
             on the redis server removed.
         """
-        final = []
-
-        for record in records:
-            if self.redis.get(self.source.get_redis_key(record)) is None:
-                final.append(record)  # noqa: PERF401
-
-        return final
+        records = self.source.get_records()
+        return [
+            record
+            for record in records
+            if self.redis.get(self.source.get_redis_key(record)) is None
+        ]
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
@@ -214,7 +219,7 @@ class BackpackDispatcher:
         records : list
             List of earthquakes with those already stored on remote removed
         """
-        records = self._remove_redis_duplicates(self.source.get_records())
+        records = self._remove_redis_duplicates()
 
         if len(records) == 0:
             return (
