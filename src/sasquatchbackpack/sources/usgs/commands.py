@@ -5,7 +5,7 @@ from datetime import timedelta
 import click
 
 from sasquatchbackpack import sasquatch
-from sasquatchbackpack.scripts import usgs as scripts
+from sasquatchbackpack.sources.usgs import scripts
 
 DEFAULT_RADIUS = 400
 

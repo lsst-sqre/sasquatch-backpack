@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from libcomcat.search import search
 
 from sasquatchbackpack.sasquatch import DataSource
-from sasquatchbackpack.schemas.usgs import EarthquakeSchema
+from sasquatchbackpack.sources.usgs.schemas import EarthquakeSchema
 
 __all__ = ["USGSConfig", "USGSSource"]
 
