@@ -1,20 +1,20 @@
 """USGS Schemas."""
 
-from dataclasses import dataclass, field
+from dataclasses_avroschema.pydantic import AvroBaseModel
+from pydantic import Field
 
-from dataclasses_avroschema.schema_generator import AvroModel
 
-
-@dataclass
-class EarthquakeSchema(AvroModel):
+class EarthquakeSchema(AvroBaseModel):
     """Collection of earthquakes near the summit."""
 
     timestamp: int
-    id: str = field(metadata={"description": "unique earthquake id"})
-    latitude: float = field(metadata={"units": "degree"})
-    longitude: float = field(metadata={"units": "degree"})
-    depth: float = field(metadata={"units": "km"})
-    magnitude: float = field(metadata={"units": "u.richter_magnitudes"})
+    id: str = Field(description="unique earthquake id")
+    latitude: float = Field(json_schema_extra={"units": "degree"})
+    longitude: float = Field(json_schema_extra={"units": "degree"})
+    depth: float = Field(json_schema_extra={"units": "km"})
+    magnitude: float = Field(
+        json_schema_extra={"units": "u.richter_magnitudes"}
+    )
 
     class Meta:
         """Schema metadata."""

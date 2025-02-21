@@ -5,13 +5,16 @@ from datetime import timedelta
 import click
 
 from sasquatchbackpack import sasquatch
-from sasquatchbackpack.scripts import usgs
+from sasquatchbackpack.scripts import usgs as scripts
 
 DEFAULT_RADIUS = 400
 
 DEFAULT_COORDS = (-30.22573200864174, -70.73932987127506)
 
 DEFAULT_MAGNITUDE_BOUNDS = (2, 10)
+
+# ruff: noqa:TD002
+# ruff: noqa:TD003
 
 
 def check_duration(
@@ -135,32 +138,47 @@ cannot excede your provided maximum magnitude ({upper})."""
     callback=check_magnitude_bounds,
 )
 @click.option(
-    "--dry-run",
+    "--post",
     is_flag=True,
     default=False,
-    help="Perform a trial run with no data being sent to Kafka.",
+    help=(
+        "Allows the user to specify that the API output should be "
+        "posted to kafka"
+    ),
 )
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
-    dry_run: bool,  # noqa: FBT001
+    post: bool,  # noqa: FBT001
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
     to console. Optionally, also allows the user to post the
     queried data to kafka.
     """
+    click.echo(
+        f"Querying USGS with post mode {'enabled' if post else 'disabled'}..."
+    )
+
     days, hours = duration
     total_duration = timedelta(days=days, hours=hours)
 
-    results = usgs.search_api(
+    config = scripts.USGSConfig(
+        total_duration, radius, coords, magnitude_bounds
+    )
+    source = scripts.USGSSource(config)
+    backpack_dispatcher = sasquatch.BackpackDispatcher(source)
+
+    results = scripts.search_api(
         total_duration,
         radius,
         coords,
         magnitude_bounds,
     )
 
+    # TODO: Add CLI feedback on what items are cached to redis
+    # and which are new
     if len(results) > 0:
         click.secho("SUCCESS!", fg="green")
         click.echo("------")
@@ -174,21 +192,35 @@ def usgs_earthquake_data(
         click.echo("------")
         return
 
-    if dry_run:
-        click.echo("Dry run mode: No data will be sent to Kafka.")
+    if not post:
+        click.echo("Post mode is disabled: No data will be sent to Kafka.")
         return
 
-    click.echo("Sending data...")
+    click.echo("Post mode enabled: Sending data...")
+    click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
-    config = usgs.USGSConfig(total_duration, radius, coords, magnitude_bounds)
-    source = usgs.USGSSource(config)
-
-    backpack_dispatcher = sasquatch.BackpackDispatcher(
-        source, sasquatch.DispatcherConfig()
-    )
-    result = backpack_dispatcher.post()
+    result, records = backpack_dispatcher.post()
 
     if "Error" in result:
         click.secho(result, fg="red")
+    elif "Warning" in result:
+        click.secho(result, fg="yellow")
     else:
         click.secho("Data successfully sent!", fg="green")
+        click.echo("The following items were added to Kafka:")
+
+        click.echo("------")
+        for record in records:
+            value = record["value"]
+            click.echo(
+                f"{value['id']} "
+                f"({value['latitude']}, {value['longitude']}) "
+                f"{value['depth']} km "
+                f"M{value['magnitude']}"
+            )
+        click.echo("------")
+
+        click.echo(
+            "All entries missing from this list "
+            "have been identified as already present in Kafka."
+        )

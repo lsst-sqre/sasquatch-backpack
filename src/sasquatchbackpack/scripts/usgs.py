@@ -8,7 +8,7 @@ from libcomcat.search import search
 from sasquatchbackpack.sasquatch import DataSource
 from sasquatchbackpack.schemas.usgs import EarthquakeSchema
 
-__all__ = ["USGSSource", "USGSConfig"]
+__all__ = ["USGSConfig", "USGSSource"]
 
 
 def search_api(
@@ -65,12 +65,6 @@ class USGSConfig:
         (latitude, longitude)
     magnitude_bounds : tuple[int, int]
         Upper and lower bounds for magnitude search (lower, upper)
-    schema_file : `str`, optional
-        Directory path to the relevant source schema
-        (src/sasquatchbackpack/schemas/schema_name_here.avsc), optional,
-        defaults to src/sasquatchbackpack/schemas/usgs.avsc
-    cron_schema : `str`, optional
-        Directory path to the relevant source schema from a cronjob.
     topic_name : `str`, optional
         Name of the the sasquatch topic
     """
@@ -90,8 +84,6 @@ class USGSSource(DataSource):
     config : USGSConfig
         USGSConfig to transmit relevant information to
         the Source
-    topic_name : str
-        Specific source name, used as an identifier
     """
 
     def __init__(
@@ -145,3 +137,21 @@ class USGSSource(DataSource):
             raise ConnectionError(
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
+
+    def get_redis_key(self, datapoint: dict) -> str:
+        """Allow USGS API to format its own redis keys.
+        For usage in the BackpackDispatcher.
+
+        Parameters
+        ----------
+        datapoint : dict
+            An individual result from the list output of get_records().
+
+        Returns
+        -------
+        str : str
+            A deterministic redis key for this specific data point.
+        """
+        # Redis keys are formatted "topic_name:key_value"
+        # to keep data from different APIs discreet
+        return f"{self.topic_name}:{datapoint['value']['id']}"

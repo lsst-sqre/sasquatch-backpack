@@ -1,16 +1,21 @@
 """Handles dispatch of backpack data to kafka."""
 
-__all__ = ["BackpackDispatcher", "DispatcherConfig", "DataSource"]
+__all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
 
+import asyncio
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
 
+import redis.asyncio as redis
 import requests
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
+
+# ruff: noqa:TD002
+# ruff: noqa:TD003
 
 
 class DataSource(ABC):
@@ -32,6 +37,53 @@ class DataSource(ABC):
     @abstractmethod
     def get_records(self) -> list[dict]:
         pass
+
+    @abstractmethod
+    def get_redis_key(self, datapoint: dict) -> str:
+        pass
+
+
+class RedisManager:
+    """Manage redis operations for backpack.
+
+    Parameters
+    ----------
+    address : str
+        Address where redis server can be accessed.
+    """
+
+    def __init__(self, address: str) -> None:
+        self.address = address
+        self.model = redis.from_url(self.address)
+
+        self.loop = asyncio.new_event_loop()
+
+    def store(self, key: str, item: str = "value") -> None:
+        """Store a key value pair in the provided redis server.
+
+        Parameters
+        ----------
+        key : str
+            Key that will be used to access the stored data.
+        item : str
+            Value that will be stored. Defaults to "value".
+        """
+        self.loop.run_until_complete(self.model.set(key, item))
+
+    def get(self, key: str) -> str | None:
+        """Query a key from the provided redis server and return its value.
+
+        Parameters
+        ----------
+        key : str
+            Key that will be used to query the stored data.
+
+        Return
+        ------
+        str
+            Queried value. Returns None if value is not found.
+        """
+        return self.loop.run_until_complete(self.model.get(key))
 
 
 @dataclass
@@ -55,6 +107,10 @@ class DispatcherConfig:
         default=os.getenv("BACKPACK_NAMESPACE", "lsst.backpack")
     )
     """Sasquatch namespace for the topic"""
+    redis_address: str = field(
+        default=os.getenv("BACKPACK_REDIS_URL", "redis://localhost:6379/0")
+    )
+    """Address of Redis server"""
 
 
 class BackpackDispatcher:
@@ -70,14 +126,21 @@ class BackpackDispatcher:
         the Dispatcher
     """
 
-    def __init__(self, source: DataSource, config: DispatcherConfig) -> None:
+    def __init__(
+        self, source: DataSource, redis_address: str = "default"
+    ) -> None:
         self.source = source
-        self.config = config
+        self.config = DispatcherConfig()
         self.schema = Template(source.load_schema()).substitute(
             {
                 "namespace": self.config.namespace,
                 "topic_name": self.source.topic_name,
             }
+        )
+        self.redis = RedisManager(
+            self.config.redis_address
+            if redis_address == "default"
+            else redis_address
         )
 
     def create_topic(self) -> str:
@@ -102,8 +165,7 @@ class BackpackDispatcher:
             return f"Error getting cluster ID: {e}"
 
         topic_config = {
-            "topic_name": f"{self.config.namespace}."
-            f"{self.source.topic_name}",
+            "topic_name": f"{self.config.namespace}.{self.source.topic_name}",
             "partitions_count": self.config.partitions_count,
             "replication_factor": self.config.replication_factor,
         }
@@ -124,16 +186,46 @@ class BackpackDispatcher:
 
         return response.text
 
-    def post(self) -> str:
+    def _remove_redis_duplicates(self) -> list[dict]:
+        """Check the redis server for any duplicate data points
+        present in the provided records, and return a list with them removed.
+
+        Parameters
+        ----------
+        records : list[dict]
+            Output of a source.get_records() call.
+
+        Returns
+        -------
+        final : list[dict]
+            List with duplicate elements in common with those
+            on the redis server removed.
+        """
+        records = self.source.get_records()
+        return [
+            record
+            for record in records
+            if self.redis.get(self.source.get_redis_key(record)) is None
+        ]
+
+    def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
 
         Returns
         -------
-        response text : str
+        response-text : str
             The results of the POST request in string format
+        records : list
+            List of earthquakes with those already stored on remote removed
         """
-        records = self.source.get_records()
+        records = self._remove_redis_duplicates()
+
+        if len(records) == 0:
+            return (
+                "Warning: All entries already present, aborting POST request",
+                records,
+            )
 
         payload = {"value_schema": self.schema, "records": records}
 
@@ -156,7 +248,11 @@ class BackpackDispatcher:
                 timeout=10,
             )
             response.raise_for_status()  # Raises HTTPError for bad responses
-        except requests.RequestException as e:
-            return f"Error POSTing data: {e}"
 
-        return response.text
+        except requests.RequestException as e:
+            return f"Error POSTing data: {e}", records
+
+        for record in records:
+            self.redis.store(self.source.get_redis_key(record))
+
+        return response.text, records
