@@ -1,6 +1,6 @@
 """Accesses the USGSLibcomcat API."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from libcomcat.search import search
@@ -74,6 +74,9 @@ class USGSConfig:
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
     topic_name: str = "usgs_earthquake_data"
+    schema: str = field(
+        default=EarthquakeSchema.avro_schema().replace("double", "float")
+    )
 
 
 class USGSSource(DataSource):
@@ -93,7 +96,7 @@ class USGSSource(DataSource):
         super().__init__(config.topic_name)
         self.duration = config.duration
         self.config = config
-        self.schema = EarthquakeSchema.avro_schema().replace("double", "float")
+        self.schema = config.schema
         self.radius = config.radius
         self.coords = config.coords
         self.magnitude_bounds = config.magnitude_bounds
