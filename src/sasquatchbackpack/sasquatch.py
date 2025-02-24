@@ -27,12 +27,9 @@ class DataSource(ABC):
         Specific source name, used as an identifier
     """
 
-    def __init__(self, topic_name: str) -> None:
+    def __init__(self, topic_name: str, schema: str) -> None:
         self.topic_name = topic_name
-
-    @abstractmethod
-    def load_schema(self) -> str:
-        pass
+        self.schema = schema
 
     @abstractmethod
     def get_records(self) -> list[dict]:
@@ -131,7 +128,7 @@ class BackpackDispatcher:
     ) -> None:
         self.source = source
         self.config = DispatcherConfig()
-        self.schema = Template(source.load_schema()).substitute(
+        self.schema = Template(source.schema).substitute(
             {
                 "namespace": self.config.namespace,
                 "topic_name": self.source.topic_name,

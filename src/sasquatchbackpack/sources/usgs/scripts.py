@@ -93,17 +93,12 @@ class USGSSource(DataSource):
         self,
         config: USGSConfig,
     ) -> None:
-        super().__init__(config.topic_name)
+        super().__init__(config.topic_name, config.schema)
         self.duration = config.duration
         self.config = config
-        self.schema = config.schema
         self.radius = config.radius
         self.coords = config.coords
         self.magnitude_bounds = config.magnitude_bounds
-
-    def load_schema(self) -> str:
-        """Load the relevant schema."""
-        return self.schema
 
     def get_records(self) -> list[dict]:
         """Call the USGS Comcat API and assembles records.
