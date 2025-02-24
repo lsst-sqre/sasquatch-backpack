@@ -35,7 +35,7 @@ class TestSource(sasquatch.DataSource):
         return f"{self.topic_name}:{datapoint['value']['id']}"
 
 
-def test_remove_redis_duplicates() -> None:
+def test_get_source_records() -> None:
     source = TestSource([{"id": "abc123"}, {"id": "123abc"}])
     dispatcher = sasquatch.BackpackDispatcher(
         source, "redis://localhost:" + os.environ["REDIS_6379_TCP_PORT"] + "/0"
@@ -46,6 +46,4 @@ def test_remove_redis_duplicates() -> None:
     result = dispatcher.redis.get("test:abc123")
     assert result is not None
 
-    assert dispatcher._remove_redis_duplicates() == [
-        {"value": {"id": "123abc"}}
-    ]
+    assert dispatcher._get_source_records() == [{"value": {"id": "123abc"}}]

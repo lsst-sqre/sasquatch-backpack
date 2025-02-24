@@ -186,9 +186,9 @@ class BackpackDispatcher:
 
         return response.text
 
-    def _remove_redis_duplicates(self) -> list[dict]:
-        """Check the redis server for any duplicate data points
-        present in the provided records, and return a list with them removed.
+    def _get_source_records(self) -> list[dict]:
+        """Get source records and check the redis server for any
+        duplicate data points present, then return a list with them removed.
 
         Parameters
         ----------
@@ -219,7 +219,7 @@ class BackpackDispatcher:
         records : list
             List of earthquakes with those already stored on remote removed
         """
-        records = self._remove_redis_duplicates()
+        records = self._get_source_records()
 
         if len(records) == 0:
             return (
