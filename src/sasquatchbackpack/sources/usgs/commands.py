@@ -1,6 +1,6 @@
 """USGS CLI."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import click
 
@@ -214,7 +214,12 @@ def usgs_earthquake_data(
             value = record["value"]
             click.echo(
                 f"{value['id']} "
-                f"({value['latitude']}, {value['longitude']}) "
+                f"{
+                    datetime.fromtimestamp(
+                        value['timestamp'], tz=UTC
+                    ).strftime('%Y-%m-%d %H:%M:%S')
+                } "
+                f"({value['latitude']},{value['longitude']}) "
                 f"{value['depth']} km "
                 f"M{value['magnitude']}"
             )
