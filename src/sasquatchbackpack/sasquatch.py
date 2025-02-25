@@ -27,9 +27,12 @@ class DataSource(ABC):
         Specific source name, used as an identifier
     """
 
-    def __init__(self, topic_name: str, schema: str) -> None:
+    def __init__(
+        self, topic_name: str, schema: str, *, uses_redis: bool
+    ) -> None:
         self.topic_name = topic_name
         self.schema = schema
+        self.uses_redis = uses_redis
 
     @abstractmethod
     def get_records(self) -> list[dict]:
@@ -183,9 +186,10 @@ class BackpackDispatcher:
 
         return response.text
 
-    def _get_source_records(self) -> list[dict]:
+    def _get_source_records(self) -> list[dict] | None:
         """Get source records and check the redis server for any
         duplicate data points present, then return a list with them removed.
+        Returns None if list is empty.
 
         Parameters
         ----------
@@ -199,6 +203,13 @@ class BackpackDispatcher:
             on the redis server removed.
         """
         records = self.source.get_records()
+
+        if len(records) == 0:
+            return None
+
+        if not self.source.uses_redis:
+            return records
+
         return [
             record
             for record in records
@@ -217,6 +228,12 @@ class BackpackDispatcher:
             List of earthquakes with those already stored on remote removed
         """
         records = self._get_source_records()
+
+        if records is None:
+            return (
+                "Warning: No entries found, aborting POST request",
+                [],
+            )
 
         if len(records) == 0:
             return (
@@ -249,7 +266,8 @@ class BackpackDispatcher:
         except requests.RequestException as e:
             return f"Error POSTing data: {e}", records
 
-        for record in records:
-            self.redis.store(self.source.get_redis_key(record))
+        if self.source.uses_redis:
+            for record in records:
+                self.redis.store(self.source.get_redis_key(record))
 
         return response.text, records

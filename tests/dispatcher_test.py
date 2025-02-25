@@ -22,11 +22,12 @@ class TestSchema(AvroBaseModel):
 
 class TestSource(sasquatch.DataSource):
     def __init__(self, current_records: list[dict[str, str]]) -> None:
-        super().__init__("test")
+        super().__init__(
+            "test",
+            TestSchema.avro_schema().replace("double", "float"),
+            uses_redis=True,
+        )
         self.records = current_records
-
-    def load_schema(self) -> str:
-        return TestSchema.avro_schema().replace("double", "float")
 
     def get_records(self) -> list[dict]:
         return [{"value": {"id": record["id"]}} for record in self.records]
@@ -47,3 +48,6 @@ def test_get_source_records() -> None:
     assert result is not None
 
     assert dispatcher._get_source_records() == [{"value": {"id": "123abc"}}]
+
+
+# Add test for uses_redis == False

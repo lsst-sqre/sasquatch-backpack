@@ -67,6 +67,11 @@ class USGSConfig:
         Upper and lower bounds for magnitude search (lower, upper)
     topic_name : `str`, optional
         Name of the the sasquatch topic
+    schema : str, optional
+        Defined & initialized avro schema.
+        Structure used to encode query results
+    redis : bool, optional
+        True if this source is using redis.
     """
 
     duration: timedelta
@@ -77,6 +82,7 @@ class USGSConfig:
     schema: str = field(
         default=EarthquakeSchema.avro_schema().replace("double", "float")
     )
+    uses_redis: bool = field(default=True)
 
 
 class USGSSource(DataSource):
@@ -93,7 +99,9 @@ class USGSSource(DataSource):
         self,
         config: USGSConfig,
     ) -> None:
-        super().__init__(config.topic_name, config.schema)
+        super().__init__(
+            config.topic_name, config.schema, uses_redis=config.uses_redis
+        )
         self.duration = config.duration
         self.config = config
         self.radius = config.radius
