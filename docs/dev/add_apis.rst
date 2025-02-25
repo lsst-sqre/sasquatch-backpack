@@ -129,7 +129,7 @@ These will be replaced with their actual values later on when the file is parsed
 Add configs
 ===========
 Going back to your ``scripts.py`` file, you'll want to add a dataclass for each API call you're making.
-Make sure to include all of the relevant parameters that you'll need to make that call, as well as a reference to that specific schema, a topic name, and a redis boolean.
+Make sure to include all of the relevant parameters that you'll need to make that call, as well as a reference to that specific schema, a topic name, and a uses_redis boolean.
 
 .. code-block:: python
 
@@ -145,77 +145,95 @@ Make sure to include all of the relevant parameters that you'll need to make tha
         schema: str = field(
             default=schemas.MyFunctionSchemaHere.avro_schema().replace("double", "float")
         )
-        redis: bool = field(
+        uses_redis: bool = field(
             default=True
         )
 
 The topic name should be the name of your command,
 the schema should be similarly formatted to the example, and
-the redis bool should be true if the source will be using redis to store state.
+the redis bool should be true if the source will be using redis to store states. If you're not sure whether your source should take advantage of backpack's redis implementation, check out `how it works <./redis.html>`__ to learn more.
 
 Add Source
 ==========
 Now you're finally ready to make your source. From within your ``scripts.py`` file, you'll make a source class, inhereting from ``sasquatchbackpack.sasquatch.DataSource``. This will require two methods:
-``get_records()`` and ``get_redis_key()`` (the latter of which being only strictly necessary if you plan to use backpack's redis instance).
+``get_records()`` and ``get_redis_key()``.
 
 ``get_records()`` should make an API call using the function you coded at the beginning, then return the encoded results in an array.
-This should be surrounded with the following try:
+This should be surrounded with a "try" like so:
 
 .. code-block:: python
 
-    try:
-        # API Call
-        # return results
-    except ConnectionError as ce:
-        raise ConnectionError(
-            f"A connection error occurred while fetching records: {ce}"
-        ) from ce
+    def get_records(self) -> list[dict]:
+        """This too is a docstring"""
 
+        try:
+            # API Call
+            # return results
+        except ConnectionError as ce:
+            raise ConnectionError(
+                f"A connection error occurred while fetching records: {ce}"
+            ) from ce
 
-The class's constructor (``__init__``) should read in the config you made in the pervious step.
-You'll also want to call ``super().__init__(config.topic_name)`` inside. Otherwise, feel free to initialize your parameters as you will.
+``get_redis_key()`` can safely return an empty string if your config has set uses_redis to false, and you don't intend to integrate this souce with backpack's redis instance. Otherwise, this method should return a unique string structured as such: ``f"{self.topic_name}:uniqueItemIdentifierHere"``. This identifier is best suited as an integer id number as stated above in Note #2, however can be anything that uniquely identifies this specific object.
+
+Further, the class's constructor (``__init__``) should read in the config you made in the pervious step.
+You'll also want to call ``super().__init__(config.topic_name, config.schema, uses_redis=config.uses_redis)`` inside. Otherwise, feel free to initialize your parameters freely.
 
 Update CLI
 ==========
-You'll want to add a dry run option to your CLI command. To do so, add the following to your CLI command
+You'll want to add a post option to your CLI command, to allow users to specify whether or not the command should go ahead and send a post request to kafka with the provided data or not. To do so, add the following to your CLI command
 
 .. code-block:: python
 
     @click.option(
-        "--dry-run",
+        "--post",
         is_flag=True,
         default=False,
-        help="Perform a trial run with no data being sent to Kafka.",
+        help=(
+            "Allows the user to specify that the API output should be "
+            "posted to kafka"
+        ),
     )
 
 
-Remember to also add ``dry_run: bool,  # noqa: FBT001`` as a parameter.
-You can add the funciton of the dry run flag after the body of the extant function with the following:
+Remember to also add ``post: bool,  # noqa: FBT001`` as a parameter.
+You can add the funciton of the post flag after the body of the extant function with the following:
 
 .. code-block:: python
 
-    if dry_run:
-        click.echo("Dry run mode: No data will be sent to Kafka.")
+    click.echo(
+        f"Querying USGS with post mode {'enabled' if post else 'disabled'}..."
+    )
+    #Query
+    if not post:
+        click.echo("Post mode is disabled: No data will be sent to Kafka.")
         return
 
-    click.echo("Sending data...")
+    click.echo("Post mode enabled: Sending data...")
 
 To actually send the data, simply import and instantiate the config and source objects you made in your
-``src/sasquatchbackpack/scripts`` file. Then, import ``sasquatchbackpack.sasquatch`` and add the following:
+``scripts.py`` file. Then, import ``sasquatchbackpack.sasquatch`` and add the following:
 
 .. code-block:: python
 
+    # the params here should already exist, as you're implementing this
+    # into the CLI command you've already made!
+    config = scripts.MyConfigHere(params)
+    source = scripts.MySourceHere(config)
     backpack_dispatcher = sasquatch.BackpackDispatcher(
-        source, sasquatch.DispatcherConfig()
+        source
     )
-    result = backpack_dispatcher.post()
+
+    result, records = backpack_dispatcher.post()
 
     if "Error" in result:
         click.secho(result, fg="red")
+    elif "Warning" in result:
+        click.secho(result, fg="yellow")
     else:
         click.secho("Data successfully sent!", fg="green")
 
-Note that the ``source`` object is simply the source you just instantiated.
+The records returned from the post command are the ones that the command sent. They're very helpful for giving user feedback in the CLI!
 
 Test it!
 ========
