@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from sasquatchbackpack.commands import usgs
+from sasquatchbackpack.sources.usgs import commands as usgs
 
 
 @pytest.mark.parametrize(

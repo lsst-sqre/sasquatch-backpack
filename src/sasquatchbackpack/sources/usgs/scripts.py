@@ -1,12 +1,12 @@
 """Accesses the USGSLibcomcat API."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from libcomcat.search import search
 
 from sasquatchbackpack.sasquatch import DataSource
-from sasquatchbackpack.schemas.usgs import EarthquakeSchema
+from sasquatchbackpack.sources.usgs.schemas import EarthquakeSchema
 
 __all__ = ["USGSConfig", "USGSSource"]
 
@@ -67,6 +67,11 @@ class USGSConfig:
         Upper and lower bounds for magnitude search (lower, upper)
     topic_name : `str`, optional
         Name of the the sasquatch topic
+    schema : str, optional
+        Defined & initialized avro schema.
+        Structure used to encode query results
+    redis : bool, optional
+        True if this source is using redis.
     """
 
     duration: timedelta
@@ -74,6 +79,10 @@ class USGSConfig:
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
     topic_name: str = "usgs_earthquake_data"
+    schema: str = field(
+        default=EarthquakeSchema.avro_schema().replace("double", "float")
+    )
+    uses_redis: bool = field(default=True)
 
 
 class USGSSource(DataSource):
@@ -90,17 +99,14 @@ class USGSSource(DataSource):
         self,
         config: USGSConfig,
     ) -> None:
-        super().__init__(config.topic_name)
+        super().__init__(
+            config.topic_name, config.schema, uses_redis=config.uses_redis
+        )
         self.duration = config.duration
         self.config = config
-        self.schema = EarthquakeSchema.avro_schema().replace("double", "float")
         self.radius = config.radius
         self.coords = config.coords
         self.magnitude_bounds = config.magnitude_bounds
-
-    def load_schema(self) -> str:
-        """Load the relevant schema."""
-        return self.schema
 
     def get_records(self) -> list[dict]:
         """Call the USGS Comcat API and assembles records.
