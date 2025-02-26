@@ -79,8 +79,8 @@ At this point (assuming you've still got your venv active) you can run the follo
 You should be able to see the results echoed to console as you wrote above.
 Use this as an opportunity to debug your API calls so they work as intended before you start sending data to sasquatch.
 
-Add a schema
-============
+Add Schemas
+===========
 `Sasquatch <https://sasquatch.lsst.io>`__ (the wearer of the proverbial backpack), uses `Avro schemas <https://sasquatch.lsst.io/user-guide/avro.html>`__
 for data serialization. Navigate to your Source's folder and create a ``schemas.py`` file for your Source.
 Inside, use `pydantic's AvroBaseModel <https://marcosschroh.github.io/dataclasses-avroschema/pydantic/>`__ to create an avro schema. Below is a quick sample of usage.
@@ -126,7 +126,7 @@ Note 3: Meta
 The Meta subclass is required, and must contain both namespace and schema_name values.
 These will be replaced with their actual values later on when the file is parsed, so simply keep their values as shown above, in "$thing" format.
 
-Add configs
+Add Configs
 ===========
 Going back to your ``scripts.py`` file, you'll want to add a dataclass for each API call you're making.
 Make sure to include all of the relevant parameters that you'll need to make that call, as well as a reference to that specific schema, a topic name, and a uses_redis boolean.
@@ -153,8 +153,8 @@ The topic name should be the name of your command,
 the schema should be similarly formatted to the example, and
 the redis bool should be true if the source will be using redis to store states. If you're not sure whether your source should take advantage of backpack's redis implementation, check out `how it works <./redis.html>`__ to learn more.
 
-Add Source
-==========
+Add Sources
+===========
 Now you're finally ready to make your source. From within your ``scripts.py`` file, you'll make a source class, inhereting from ``sasquatchbackpack.sasquatch.DataSource``. This will require two methods:
 ``get_records()`` and ``get_redis_key()``.
 
