@@ -8,6 +8,7 @@ State Storage
 =============
 
 As of version 0.3.0, sasquatch backpack supports Redis for storing the state of a remote. Sources that opt in, by toggling their ``uses_redis`` boolean to true and implementing ``get_redis_key()`` will automatically write each pushed key (obtained via the get_redis_key() command) to the redis server, and will remove items with duplicate keys from subsequent post requests.
+In short, redis acts as a set of keys that persists id's of items that backpack sends to the remote so they can be referenced in the future.
 
 Plans
 =====
