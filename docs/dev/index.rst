@@ -9,7 +9,7 @@ Learn how to contribute to the sasquatch-backpack open source project.
 .. toctree::
    :caption: Guides
 
-   add_apis
+   add_datasources
    redis
    development
    release
