@@ -6,6 +6,26 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-0.3.0'></a>
+## 0.3.0 (2025-03-17)
+
+### Backwards-incompatible changes
+
+- Removed deprecated load_schema() method (replaced with schema field in the superclass)
+- Added redis boolean in the source config to allow users to define wheter the source will make use of redis or not
+
+### New features
+
+- Adds state persistance via redis
+- Updates USGS to use redis to store earthquake keys
+
+### Other changes
+
+- Changes filesystem structure for better ease of use when more sources are added
+- Adds new tests
+
+- Datetime is now displayed on usgs items after posting to sasquatch
+
 <a id='changelog-0.2.2'></a>
 ## 0.2.2 (2024-09-18)
 
