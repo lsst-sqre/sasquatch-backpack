@@ -2,7 +2,7 @@
 
 import click
 
-from sasquatchbackpack.commands import usgs
+from sasquatchbackpack.sources.usgs import commands as usgs
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
