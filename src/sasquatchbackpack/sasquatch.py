@@ -143,7 +143,19 @@ class BackpackDispatcher:
             else redis_address
         )
 
-    def create_topic(self) -> str:
+    def _topic_exists(self) -> bool | str:
+        """Determine whether a topic exists on kafka already.
+
+        Returns
+        -------
+        exists : bool | str
+            True if this Dispatcher's topic exists in the proper rest proxy,
+            otherwise, False. Will return a str containing relevant responses
+            in the event of an error.
+        """
+        return True
+
+    def _create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
 
         Returns
@@ -182,7 +194,7 @@ class BackpackDispatcher:
             )
             response.raise_for_status()  # Raises HTTPError for bad responses
         except requests.RequestException as e:
-            return f"Error POSTing data: {e}"
+            return f"Error Creating Topic during POST: {e}"
 
         return response.text
 
@@ -216,28 +228,61 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    def post(self) -> tuple[str, list]:
+    def post(self) -> tuple[dict[str, str], list]:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
 
         Returns
         -------
-        response-text : str
-            The results of the POST request in string format
+        response_text : dict[str, str]
+            The results of POST requests sent by this function
+            in string format. Entries will be keyed according to the purpose
+            of the POST. Empty values denote a POST request that has not
+            occurred.
         records : list
-            List of earthquakes with those already stored on remote removed
+            List of posted records.
         """
+        response_text: dict[str, str] = {
+            "create_topic": "",
+            "write_values": "",
+        }
+
+        topic_exists: bool | str = self._topic_exists()
+
+        if topic_exists is str:
+            response_text["create_topic"] = (
+                f"Error: Topic check failed: \n {topic_exists}"
+            )
+            return (
+                response_text,
+                [],
+            )
+
+        if not topic_exists:
+            response_text["create_topic"] = self._create_topic()
+        else:
+            response_text["create_topic"] = (
+                "Relevant topic already exists, "
+                "bypassing creation POST request."
+            )
+
         records = self._get_source_records()
 
         if records is None:
+            response_text["write_values"] = (
+                "Warning: No entries found, aborting POST request"
+            )
             return (
-                "Warning: No entries found, aborting POST request",
+                response_text,
                 [],
             )
 
         if len(records) == 0:
+            response_text["write_values"] = (
+                "Warning: All entries already present, aborting POST request"
+            )
             return (
-                "Warning: All entries already present, aborting POST request",
+                response_text,
                 records,
             )
 
@@ -264,10 +309,14 @@ class BackpackDispatcher:
             response.raise_for_status()  # Raises HTTPError for bad responses
 
         except requests.RequestException as e:
-            return f"Error POSTing data: {e}", records
+            response_text["write_values"] = (
+                f"Error writing values during POST: {e}"
+            )
+            return (response_text, records)
 
         if self.source.uses_redis:
             for record in records:
                 self.redis.store(self.source.get_redis_key(record))
 
-        return response.text, records
+        response_text["write_values"] = response.text
+        return (response_text, records)
