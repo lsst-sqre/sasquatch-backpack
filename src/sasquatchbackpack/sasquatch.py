@@ -3,6 +3,7 @@
 __all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
 
 import asyncio
+import json
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -143,7 +144,7 @@ class BackpackDispatcher:
             else redis_address
         )
 
-    def _topic_exists(self) -> bool | str:
+    def _get_topic_exists(self) -> bool | str:
         """Determine whether a topic exists on kafka already.
 
         Returns
@@ -153,9 +154,73 @@ class BackpackDispatcher:
             otherwise, False. Will return a str containing relevant responses
             in the event of an error.
         """
-        return True
+        headers = {"content-type": "application/json"}
 
-    def _create_topic(self) -> str:
+        try:
+            r = requests.get(
+                f"{self.config.sasquatch_rest_proxy_url}/v3/clusters",
+                headers=headers,
+                timeout=10,
+            )
+            r.raise_for_status()  # Raises HTTPError for bad responses
+            cluster_id = r.json()["data"][0]["cluster_id"]
+        except requests.RequestException as e:
+            return f"Error getting cluster ID: {e}"
+
+        headers = {"content-type": "application/json"}
+
+        try:
+            response = requests.get(
+                f"{self.config.sasquatch_rest_proxy_url}/v3/clusters/"
+                f"{cluster_id}/topics",
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()  # Raises HTTPError for bad responses
+            topics = response.json()["data"]
+        except requests.RequestException as e:
+            return f"Error Creating Topic during POST: {e}"
+
+        topic_name = self.config.namespace + "." + self.source.topic_name
+
+        return bool(any(topic["topic_name"] == topic_name for topic in topics))
+
+    def _handle_topic_exists(
+        self, request: dict[str, dict[str, str]]
+    ) -> bool | None:
+        """Handle errors and format responses for topic checking.
+
+        Parameters
+        ----------
+        request: dict[str, dict[str, str]]
+            Request item.
+
+        Return
+        ------
+        bool | None
+            boolean representation of whether this item's topic was found
+            in kafka. None if an error was encountered.
+        """
+        topic_exists: bool | str = self._get_topic_exists()
+
+        if type(topic_exists) is str:
+            request["check_topic"] = {
+                "status": "Error",
+                "message": f"Topic check failed: \n{topic_exists}",
+            }
+            return None
+
+        request["check_topic"] = {
+            "status": "Success",
+            "message": f'Sasquatch backpack {
+                "found" if topic_exists else "did not find"
+            } "{
+                self.config.namespace + "." + self.source.topic_name
+            }" on remote.',
+        }
+        return bool(topic_exists)
+
+    def _post_new_topic(self) -> dict[str, str]:
         """Create kafka topic based off data from provided source.
 
         Returns
@@ -174,7 +239,10 @@ class BackpackDispatcher:
             r.raise_for_status()  # Raises HTTPError for bad responses
             cluster_id = r.json()["data"][0]["cluster_id"]
         except requests.RequestException as e:
-            return f"Error getting cluster ID: {e}"
+            return {
+                "status": "Error",
+                "message": f"Error getting cluster ID: {e}",
+            }
 
         topic_config = {
             "topic_name": f"{self.config.namespace}.{self.source.topic_name}",
@@ -194,9 +262,12 @@ class BackpackDispatcher:
             )
             response.raise_for_status()  # Raises HTTPError for bad responses
         except requests.RequestException as e:
-            return f"Error Creating Topic during POST: {e}"
+            return {
+                "status": "Error",
+                "message": f"Error Creating Topic during POST: {e}",
+            }
 
-        return response.text
+        return {"status": "Success", "message": response.text}
 
     def _get_source_records(self) -> list[dict] | None:
         """Get source records and check the redis server for any
@@ -228,63 +299,81 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    def post(self) -> tuple[dict[str, str], list]:
+    def post(self, *, force_post: bool = False) -> str:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
 
+        Parameters
+        ----------
+        force_post: bool
+            Ignore checks to determine whether a topic exists and
+            push a new topic name, overwriting any extant topic names.
+
         Returns
         -------
-        response_text : dict[str, str]
-            The results of POST requests sent by this function
-            in string format. Entries will be keyed according to the purpose
-            of the POST. Empty values denote a POST request that has not
-            occurred.
-        records : list
-            List of posted records.
+        response: str
+            stringified json containing the following key value pairs:
+            "succeeded": bool
+                True if the post succeeded,
+                False if any relevant steps failed.
+            "requests": dict[str, dict[str, str]]
+                The results of various POST requests sent by this function.
+                Empty values denote a POST request that has not occurred.
+                "check_topic", create_topic", "write_values": dict
+                    "status": str
+                        "Success" if request suceeded, "Error" if request
+                        failed, "Warning" for other non-breaking behavior.
+                    "message": str
+                        Specific description of what occured.
+            "records": list
+                List of posted records.
         """
-        response_text: dict[str, str] = {
-            "create_topic": "",
-            "write_values": "",
+        response: dict = {
+            "succeeded": False,
+            "requests": {
+                "check_topic": {},
+                "create_topic": {},
+                "write_values": {},
+            },
+            "records": [],
         }
+        requests = response["requests"]
 
-        topic_exists: bool | str = self._topic_exists()
+        topic_exists = self._handle_topic_exists(requests)
 
-        if topic_exists is str:
-            response_text["create_topic"] = (
-                f"Error: Topic check failed: \n {topic_exists}"
-            )
-            return (
-                response_text,
-                [],
-            )
+        if topic_exists is None:
+            return json.dumps(response)
 
-        if not topic_exists:
-            response_text["create_topic"] = self._create_topic()
+        if force_post or not topic_exists:
+            requests["create_topic"] = self._post_new_topic()
+            if requests["create_topic"]["status"] == "Error":
+                return json.dumps(response)
         else:
-            response_text["create_topic"] = (
-                "Relevant topic already exists, "
-                "bypassing creation POST request."
-            )
+            requests["create_topic"] = {
+                "status": "Success",
+                "message": (
+                    "Relevant topic already exists in kafka, "
+                    "bypassing creation POST request."
+                ),
+            }
 
         records = self._get_source_records()
 
         if records is None:
-            response_text["write_values"] = (
-                "Warning: No entries found, aborting POST request"
-            )
-            return (
-                response_text,
-                [],
-            )
+            requests["write_values"] = {
+                "status": "Warning",
+                "message": "No entries found, aborting POST request",
+            }
+            return json.dumps(response)
 
         if len(records) == 0:
-            response_text["write_values"] = (
-                "Warning: All entries already present, aborting POST request"
-            )
-            return (
-                response_text,
-                records,
-            )
+            requests["write_values"] = {
+                "status": "Warning",
+                "message": (
+                    "All entries already present, aborting POST request"
+                ),
+            }
+            return json.dumps(response)
 
         payload = {"value_schema": self.schema, "records": records}
 
@@ -299,24 +388,29 @@ class BackpackDispatcher:
         }
 
         try:
-            response = requests.request(
+            post_response = requests.request(
                 "POST",
                 url,
                 json=payload,
                 headers=headers,
                 timeout=10,
             )
-            response.raise_for_status()  # Raises HTTPError for bad responses
+            # Raises HTTPError for bad responses
+            post_response.raise_for_status()
 
         except requests.RequestException as e:
-            response_text["write_values"] = (
-                f"Error writing values during POST: {e}"
-            )
-            return (response_text, records)
+            response["write_values"] = {
+                "status": "Error",
+                "message": f"Error writing values during POST: {e}",
+            }
+            return json.dumps(response)
 
         if self.source.uses_redis:
             for record in records:
                 self.redis.store(self.source.get_redis_key(record))
 
-        response_text["write_values"] = response.text
-        return (response_text, records)
+        response["write_values"] = {
+            "status": "Success",
+            "message": post_response.text,
+        }
+        return json.dumps(response)
