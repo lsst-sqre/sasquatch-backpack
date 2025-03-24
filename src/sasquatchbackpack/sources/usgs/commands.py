@@ -1,5 +1,6 @@
 """USGS CLI."""
 
+import json
 from datetime import UTC, datetime, timedelta
 
 import click
@@ -12,9 +13,6 @@ DEFAULT_RADIUS = 400
 DEFAULT_COORDS = (-30.22573200864174, -70.73932987127506)
 
 DEFAULT_MAGNITUDE_BOUNDS = (2, 10)
-
-# ruff: noqa:TD002
-# ruff: noqa:TD003
 
 
 def check_duration(
@@ -177,8 +175,6 @@ def usgs_earthquake_data(
         magnitude_bounds,
     )
 
-    # TODO: Add CLI feedback on what items are cached to redis
-    # and which are new
     if len(results) > 0:
         click.secho("SUCCESS!", fg="green")
         click.echo("------")
@@ -199,12 +195,57 @@ def usgs_earthquake_data(
     click.echo("Post mode enabled: Sending data...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
-    result, records = backpack_dispatcher.post()
+    response = json.loads(backpack_dispatcher.post())
+    _handle_post_response(response)
 
-    if "Error" in result:
-        click.secho(result, fg="red")
-    elif "Warning" in result:
-        click.secho(result, fg="yellow")
+
+def _handle_post_response(response: dict) -> None:
+    """Handle click response to post request output.
+
+    Parameters
+    ----------
+    response: dict
+        json loaded dictionary recieved from a backpack_dispatcher post.
+    """
+    if not response["succeeded"]:
+        failed: tuple[str, dict[str, str]] = ("none", {"none": "none"})
+        for name in response["requests"]:
+            item: dict = response["requests"][name]
+            click.echo(f"{name}: {item['message']} - Status: {item['status']}")
+            if item["status"] == "Error":
+                failed = (name, item)
+                break
+
+        if failed[0] == "none":
+            click.secho("Unknown error encountered", fg="red")
+            click.echo(json.dumps(response))
+            return
+
+        if failed[0] == "check_topic":
+            click.secho(
+                "Tip: You can use force_post=True to bypass topic checks.",
+                fg="yellow",
+            )
+        return
+
+    click.echo("------")
+    for name in response["requests"]:
+        if response["requests"][name]["status"] == "Warning":
+            click.secho(
+                f"Warning! {name}: {response['requests'][name]['message']}",
+                fg="yellow",
+            )
+            continue
+        click.secho(
+            f"{name}: {response['requests'][name]['message']} "
+            "- Status: {response['requests'][name]['status']}",
+            fg="green",
+        )
+
+    records: list = response["records"]
+    if len(records) == 0:
+        click.secho("Success!", fg="green")
+        click.echo("No data has been sent.")
     else:
         click.secho("Data successfully sent!", fg="green")
         click.echo("The following items were added to Kafka:")
@@ -223,9 +264,8 @@ def usgs_earthquake_data(
                 f"{value['depth']} km "
                 f"M{value['magnitude']}"
             )
-        click.echo("------")
+    click.echo("------")
 
-        click.echo(
-            "All entries missing from this list "
-            "have been identified as already present in Kafka."
-        )
+    click.echo(
+        "All missing entries have been identified as already present in Kafka."
+    )
