@@ -78,7 +78,7 @@ class USGSConfig:
     radius: int
     coords: tuple[float, float]
     magnitude_bounds: tuple[int, int]
-    topic_name: str = "usgs_earthquake_data"
+    topic_name: str = "usgs-earthquake-data"
     schema: str = field(
         default=EarthquakeSchema.avro_schema().replace("double", "float")
     )
