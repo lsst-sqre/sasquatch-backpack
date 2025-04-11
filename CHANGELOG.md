@@ -6,6 +6,13 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-0.3.1'></a>
+## 0.3.1 (2025-04-11)
+
+### Other changes
+
+- Rename USGS topic name for strimzi conpatability
+
 <a id='changelog-0.3.0'></a>
 ## 0.3.0 (2025-03-17)
 
