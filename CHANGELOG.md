@@ -6,6 +6,13 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-0.3.2'></a>
+## 0.3.2 (2025-04-15)
+
+### Bug fixes
+
+- Patch a critical issue in the schema name change
+
 <a id='changelog-0.3.1'></a>
 ## 0.3.1 (2025-04-11)
 
