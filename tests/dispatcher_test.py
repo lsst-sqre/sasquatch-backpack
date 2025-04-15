@@ -17,7 +17,7 @@ class TestSchema(AvroBaseModel):
         """Schema metadata."""
 
         namespace = "$namespace"
-        schema_name = "$topic_name"
+        schema_name = "testSchema"
 
 
 class TestSource(sasquatch.DataSource):
@@ -48,6 +48,3 @@ def test_get_source_records() -> None:
     assert result is not None
 
     assert dispatcher._get_source_records() == [{"value": {"id": "123abc"}}]
-
-
-# Add test for uses_redis == False
