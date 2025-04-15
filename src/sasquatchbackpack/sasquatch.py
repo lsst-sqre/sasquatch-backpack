@@ -134,7 +134,6 @@ class BackpackDispatcher:
         self.schema = Template(source.schema).substitute(
             {
                 "namespace": self.config.namespace,
-                "topic_name": self.source.topic_name,
             }
         )
         self.redis = RedisManager(

@@ -20,4 +20,4 @@ class EarthquakeSchema(AvroBaseModel):
         """Schema metadata."""
 
         namespace = "$namespace"
-        schema_name = "$topic_name"
+        schema_name = "usgsEarthquakeData"
