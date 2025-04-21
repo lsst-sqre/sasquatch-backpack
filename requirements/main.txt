@@ -361,7 +361,7 @@ dacite==1.9.2 \
     --hash=sha256:053f7c3f5128ca2e9aceb66892b1a3c8936d02c686e707bee96e19deef4bc4a0 \
     --hash=sha256:6ccc3b299727c7aa17582f0021f6ae14d5de47c7227932c47fec4cdfefd26f09
     # via dataclasses-avroschema
-dataclasses-avroschema==0.65.10 \
+dataclasses-avroschema[pydantic]==0.65.10 \
     --hash=sha256:5bb3cab29c990ab013001dbf5d81baf8bc66aca9703a3bae49165e825d8e1943 \
     --hash=sha256:a6d7178d3db2a1f3a95469e6ac57df77226e003b09026c715930bd8c4f87474c
     # via
@@ -1135,7 +1135,7 @@ pycparser==2.22 \
     --hash=sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6 \
     --hash=sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc
     # via cffi
-pydantic==2.11.3 \
+pydantic[email]==2.11.3 \
     --hash=sha256:7471657138c16adad9322fe3070c0116dd6c3ad8d649300e3cbdfe91f4db4ec3 \
     --hash=sha256:a082753436a07f9ba1289c6ffa01cd93db3548776088aa917cc43b63f68fa60f
     # via
@@ -1248,16 +1248,18 @@ pydantic-core==2.33.1 \
     # via
     #   pydantic
     #   safir
-pydantic-settings==2.8.1 \
-    --hash=sha256:81942d5ac3d905f7f3ee1a70df5dfb62d5569c12f51a5a647defc1c3d9ee2e9c \
-    --hash=sha256:d5c663dfbe9db9d5e1c646b2e161da12f0d734d422ee56f567d0ea2cee4e8585
+pydantic-settings==2.9.1 \
+    --hash=sha256:59b4f431b1defb26fe620c71a7d3968a710d719f5f4cdbbdb7926edeb770f6ef \
+    --hash=sha256:c509bf79d27563add44e8446233359004ed85066cd096d8b510f715e6ef5d268
     # via
     #   -r requirements/main.in
     #   safir
-pyjwt==2.10.1 \
+pyjwt[crypto]==2.10.1 \
     --hash=sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953 \
     --hash=sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb
-    # via gidgethub
+    # via
+    #   gidgethub
+    #   pyjwt
 pyparsing==3.2.3 \
     --hash=sha256:a749938e02d6fd0b59b356ca504a24982314bb090c383e3cf201c95ef7e2bfcf \
     --hash=sha256:b9c13f1ab8b3b542f72e28f634bad4de758ab3ce4546e4301970ad6fa77c38be
@@ -1454,7 +1456,7 @@ rpds-py==0.24.0 \
     # via
     #   jsonschema
     #   referencing
-safir==10.0.0 \
+safir[redis]==10.0.0 \
     --hash=sha256:11bdf7a129b445da9395008a4fe73bdf43da3c3546f7183d9974a969f2f132de \
     --hash=sha256:8bbff75a11b87c140214e6f5671852604867c56acf2aa30cd3a14347cbf4e7bc
     # via -r requirements/main.in
@@ -1514,10 +1516,6 @@ sentry-sdk==2.25.1 \
     --hash=sha256:60b016d0772789454dc55a284a6a44212044d4a16d9f8448725effee97aaf7f6 \
     --hash=sha256:f9041b7054a7cf12d41eadabe6458ce7c6d6eea7a97cfe1b760b6692e9562cf0
     # via safir
-setuptools==78.1.0 \
-    --hash=sha256:18fd474d4a82a5f83dac888df697af65afa82dec7323d09c3e37d1f14288da54 \
-    --hash=sha256:3e386e96793c8702ae83d17b853fb93d3e09ef82ec62722e61da5cd22376dcd8
-    # via obspy
 shapely==2.1.0 \
     --hash=sha256:0d6a7043178890b9e028d80496ff4c79dc7629bff4d78a2f25323b661756bab8 \
     --hash=sha256:15cebc323cec2cb6b2eaa310fdfc621f6dbbfaf6bde336d13838fcea76c885a9 \
@@ -1640,17 +1638,21 @@ typing-extensions==4.13.2 \
     --hash=sha256:e6c81219bd689f51865d9e372991c540bda33a0379d5573cddb9a3a23f7caaef
     # via
     #   aiokafka
+    #   anyio
     #   beautifulsoup4
     #   dataclasses-avroschema
     #   fastapi
     #   faststream
     #   pydantic
     #   pydantic-core
+    #   referencing
     #   typing-inspection
 typing-inspection==0.4.0 \
     --hash=sha256:50e72559fcd2a6367a19f7a7e610e6afcb9fac940c650290eed893d61386832f \
     --hash=sha256:9765c87de36671694a67904bf2c96e395be9c6439bb6c87b5142569dcdd65122
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-settings
 tzdata==2025.2 \
     --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8 \
     --hash=sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9
