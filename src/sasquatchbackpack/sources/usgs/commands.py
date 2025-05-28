@@ -1,5 +1,6 @@
 """USGS CLI."""
 
+import os
 from datetime import UTC, datetime, timedelta
 
 import click
@@ -228,4 +229,10 @@ def usgs_earthquake_data(
         click.echo(
             "All entries missing from this list "
             "have been identified as already present in Kafka."
+        )
+        click.echo(
+            os.getenv(
+                "SASQUATCH_REST_PROXY_URL",
+                "no env var :(",
+            )
         )
