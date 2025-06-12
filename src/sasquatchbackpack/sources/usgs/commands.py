@@ -199,7 +199,12 @@ def usgs_earthquake_data(
 
     click.echo("Post mode enabled: Sending data...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
-
+    click.echo(
+        os.getenv(
+            "SASQUATCH_REST_PROXY_URL",
+            "no env var :(",
+        )
+    )
     result, records = backpack_dispatcher.post()
 
     if "Error" in result:
@@ -229,10 +234,4 @@ def usgs_earthquake_data(
         click.echo(
             "All entries missing from this list "
             "have been identified as already present in Kafka."
-        )
-        click.echo(
-            os.getenv(
-                "SASQUATCH_REST_PROXY_URL",
-                "no env var :(",
-            )
         )
