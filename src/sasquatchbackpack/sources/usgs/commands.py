@@ -1,5 +1,6 @@
 """USGS CLI."""
 
+import os
 from datetime import UTC, datetime, timedelta
 
 import click
@@ -198,7 +199,12 @@ def usgs_earthquake_data(
 
     click.echo("Post mode enabled: Sending data...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
-
+    click.echo(
+        os.getenv(
+            "SASQUATCH_REST_PROXY_URL",
+            "no env var :(",
+        )
+    )
     result, records = backpack_dispatcher.post()
 
     if "Error" in result:
