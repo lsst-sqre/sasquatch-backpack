@@ -3,6 +3,7 @@
 __all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
 
 import asyncio
+import json
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -10,6 +11,8 @@ from string import Template
 
 import redis.asyncio as redis
 import requests
+from faststream.kafka import KafkaBroker
+from safir.kafka import KafkaConnectionSettings, SecurityProtocol
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
@@ -214,6 +217,25 @@ class BackpackDispatcher:
             for record in records
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
+
+    async def direct_connect(self) -> None:
+        """Assemble a schema and payload from the given source,
+        and route data directly to kafka.
+        """
+        config = KafkaConnectionSettings(
+            bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", ""),
+            security_protocol=SecurityProtocol.SSL,
+        )
+        kafka_broker = KafkaBroker(**config.to_faststream_params())
+
+        records = self._get_source_records()
+        if records is None:
+            return
+        if len(records) == 0:
+            return
+
+        payload = json.dumps({"value_schema": self.schema, "records": records})
+        await kafka_broker.publish(payload, self.source.topic_name)
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
