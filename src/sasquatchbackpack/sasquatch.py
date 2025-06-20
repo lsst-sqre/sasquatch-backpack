@@ -12,7 +12,7 @@ from string import Template
 import redis.asyncio as redis
 import requests
 from faststream.kafka import KafkaBroker
-from safir.kafka import KafkaConnectionSettings, SecurityProtocol
+from safir.kafka import KafkaConnectionSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
@@ -222,10 +222,7 @@ class BackpackDispatcher:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
         """
-        config = KafkaConnectionSettings(
-            bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", ""),
-            security_protocol=SecurityProtocol.SSL,
-        )
+        config = KafkaConnectionSettings()
         kafka_broker = KafkaBroker(**config.to_faststream_params())
 
         records = self._get_source_records()
