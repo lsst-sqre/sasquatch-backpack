@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
 
+import nest_asyncio
 import redis.asyncio as redis
 import requests
 from faststream.kafka import KafkaBroker
@@ -59,6 +60,7 @@ class RedisManager:
         self.address = address
         self.model = redis.from_url(self.address)
 
+        nest_asyncio.apply()
         self.loop = asyncio.new_event_loop()
 
     def store(self, key: str, item: str = "value") -> None:
