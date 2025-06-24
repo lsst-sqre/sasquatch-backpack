@@ -18,9 +18,6 @@ from safir.kafka import KafkaConnectionSettings
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
-# ruff: noqa:TD002
-# ruff: noqa:TD003
-
 
 class DataSource(ABC):
     """Base class for all relevant backpack data sources.

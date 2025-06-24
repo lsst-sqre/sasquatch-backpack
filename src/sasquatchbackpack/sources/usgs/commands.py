@@ -4,6 +4,7 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 import click
+import nest_asyncio
 
 from sasquatchbackpack import sasquatch
 from sasquatchbackpack.sources.usgs import scripts
@@ -200,6 +201,7 @@ def usgs_earthquake_data(
     click.echo("Post mode enabled: Sending data...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
+    nest_asyncio.apply()
     loop = asyncio.new_event_loop()
     loop.run_until_complete(backpack_dispatcher.direct_connect())
 

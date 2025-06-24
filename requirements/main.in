@@ -6,7 +6,7 @@
 #
 # After editing, update requirements/main.txt by running:
 #     make update-deps
-
+obspy==1.4.1
 requests
 pydantic
 pydantic-settings
@@ -14,3 +14,4 @@ types-requests
 usgs-libcomcat
 safir[redis]
 dataclasses_avroschema[pydantic]
+nest_asyncio
