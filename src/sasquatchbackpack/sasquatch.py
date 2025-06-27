@@ -223,6 +223,7 @@ class BackpackDispatcher:
         """
         config = KafkaConnectionSettings()
         kafka_broker = KafkaBroker(**config.to_faststream_params())
+        prepared_publisher = kafka_broker.publisher(self.source.topic_name)
 
         records = self._get_source_records()
         if records is None:
@@ -231,7 +232,13 @@ class BackpackDispatcher:
             return
 
         payload = json.dumps({"value_schema": self.schema, "records": records})
-        await kafka_broker.publish(payload, self.source.topic_name)
+        await prepared_publisher.publish(
+            payload,
+            headers={
+                "Content-Type": "application/vnd.kafka.avro.v2+json",
+                "Accept": "application/vnd.kafka.v2+json",
+            },
+        )
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
