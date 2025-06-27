@@ -3,19 +3,20 @@
 __all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
 
 import asyncio
+import json
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
 
+import nest_asyncio
 import redis.asyncio as redis
 import requests
+from faststream.kafka import KafkaBroker
+from safir.kafka import KafkaConnectionSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
-
-# ruff: noqa:TD002
-# ruff: noqa:TD003
 
 
 class DataSource(ABC):
@@ -56,6 +57,7 @@ class RedisManager:
         self.address = address
         self.model = redis.from_url(self.address)
 
+        nest_asyncio.apply()
         self.loop = asyncio.new_event_loop()
 
     def store(self, key: str, item: str = "value") -> None:
@@ -214,6 +216,29 @@ class BackpackDispatcher:
             for record in records
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
+
+    async def direct_connect(self) -> None:
+        """Assemble a schema and payload from the given source,
+        and route data directly to kafka.
+        """
+        config = KafkaConnectionSettings()
+        kafka_broker = KafkaBroker(**config.to_faststream_params())
+        prepared_publisher = kafka_broker.publisher(self.source.topic_name)
+
+        records = self._get_source_records()
+        if records is None:
+            return
+        if len(records) == 0:
+            return
+
+        payload = json.dumps({"value_schema": self.schema, "records": records})
+        await prepared_publisher.publish(
+            payload,
+            headers={
+                "Content-Type": "application/vnd.kafka.avro.v2+json",
+                "Accept": "application/vnd.kafka.v2+json",
+            },
+        )
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then

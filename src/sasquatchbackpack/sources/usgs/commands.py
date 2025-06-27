@@ -1,5 +1,6 @@
 """USGS CLI."""
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import click
@@ -198,6 +199,11 @@ def usgs_earthquake_data(
 
     click.echo("Post mode enabled: Sending data...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
+
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(backpack_dispatcher.direct_connect())
+
+    click.echo("complete")
 
     result, records = backpack_dispatcher.post()
 
