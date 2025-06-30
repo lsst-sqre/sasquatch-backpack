@@ -234,10 +234,7 @@ class BackpackDispatcher:
         payload = json.dumps({"value_schema": self.schema, "records": records})
         await prepared_publisher.publish(
             payload,
-            headers={
-                "Content-Type": "application/vnd.kafka.avro.v2+json",
-                "Accept": "application/vnd.kafka.v2+json",
-            },
+            headers={"content-type": "application/json"},
         )
 
     def post(self) -> tuple[str, list]:
