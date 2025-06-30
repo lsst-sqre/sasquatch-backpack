@@ -18,6 +18,8 @@ from safir.kafka import KafkaConnectionSettings
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
+# ruff:noqa:ERA001
+
 
 class DataSource(ABC):
     """Base class for all relevant backpack data sources.
@@ -203,7 +205,7 @@ class BackpackDispatcher:
             List with duplicate elements in common with those
             on the redis server removed.
         """
-        records = self.source.get_records()
+        records: list[dict] = self.source.get_records()
 
         if len(records) == 0:
             return None
@@ -221,15 +223,17 @@ class BackpackDispatcher:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
         """
-        config = KafkaConnectionSettings()
-        kafka_broker = KafkaBroker(**config.to_faststream_params())
-        prepared_publisher = kafka_broker.publisher(self.source.topic_name)
+        kafka_config = KafkaConnectionSettings()
+        kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
 
-        records = self._get_source_records()
-        if records is None:
-            return
-        if len(records) == 0:
-            return
+        @kafka_broker.publisher(self.config.namespace)
+        async def dothing(self: Self) -> list[dict] | None:
+            records: list[dict] | None = self._get_source_records()
+            if records is None:
+                return None
+            if len(records) == 0:
+                return None
+            return records
 
         payload = json.dumps({"value_schema": self.schema, "records": records})
         await prepared_publisher.publish(
@@ -262,33 +266,33 @@ class BackpackDispatcher:
                 records,
             )
 
-        payload = {"value_schema": self.schema, "records": records}
+        # payload = {"value_schema": self.schema, "records": records}
+        #
+        # url = (
+        #     f"{self.config.sasquatch_rest_proxy_url}/topics/"
+        #     f"{self.config.namespace}.{self.source.topic_name}"
+        # )
+        #
+        # headers = {
+        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
+        #     "Accept": "application/vnd.kafka.v2+json",
+        # }
 
-        url = (
-            f"{self.config.sasquatch_rest_proxy_url}/topics/"
-            f"{self.config.namespace}.{self.source.topic_name}"
-        )
-
-        headers = {
-            "Content-Type": "application/vnd.kafka.avro.v2+json",
-            "Accept": "application/vnd.kafka.v2+json",
-        }
-
-        try:
-            response = requests.request(
-                "POST",
-                url,
-                json=payload,
-                headers=headers,
-                timeout=10,
-            )
-            response.raise_for_status()  # Raises HTTPError for bad responses
-
-        except requests.RequestException as e:
-            return f"Error POSTing data: {e}", records
-
-        if self.source.uses_redis:
-            for record in records:
-                self.redis.store(self.source.get_redis_key(record))
-
-        return response.text, records
+        # try:
+        #     response = requests.request(
+        #         "POST",
+        #         url,
+        #         json=payload,
+        #         headers=headers,
+        #         timeout=10,
+        #     )
+        #     response.raise_for_status()  # Raises HTTPError for bad responses
+        #
+        # except requests.RequestException as e:
+        #     return f"Error POSTing data: {e}", records
+        #
+        # if self.source.uses_redis:
+        #     for record in records:
+        #         self.redis.store(self.source.get_redis_key(record))
+        #
+        return "working", records  # response.text, records

@@ -204,7 +204,6 @@ def usgs_earthquake_data(
     loop.run_until_complete(backpack_dispatcher.direct_connect())
 
     click.echo("complete")
-
     result, records = backpack_dispatcher.post()
 
     if "Error" in result:
