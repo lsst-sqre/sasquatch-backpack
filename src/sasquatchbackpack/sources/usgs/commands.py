@@ -1,7 +1,7 @@
 """USGS CLI."""
 
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import click
 
@@ -16,6 +16,7 @@ DEFAULT_MAGNITUDE_BOUNDS = (2, 10)
 
 # ruff: noqa:TD002
 # ruff: noqa:TD003
+# ruff: noqa: ERA001
 
 
 def check_duration(
@@ -204,34 +205,33 @@ def usgs_earthquake_data(
     loop.run_until_complete(backpack_dispatcher.direct_connect())
 
     click.echo("complete")
-
-    result, records = backpack_dispatcher.post()
-
-    if "Error" in result:
-        click.secho(result, fg="red")
-    elif "Warning" in result:
-        click.secho(result, fg="yellow")
-    else:
-        click.secho("Data successfully sent!", fg="green")
-        click.echo("The following items were added to Kafka:")
-
-        click.echo("------")
-        for record in records:
-            value = record["value"]
-            click.echo(
-                f"{value['id']} "
-                f"{
-                    datetime.fromtimestamp(
-                        value['timestamp'], tz=UTC
-                    ).strftime('%Y-%m-%d %H:%M:%S')
-                } "
-                f"({value['latitude']},{value['longitude']}) "
-                f"{value['depth']} km "
-                f"M{value['magnitude']}"
-            )
-        click.echo("------")
-
-        click.echo(
-            "All entries missing from this list "
-            "have been identified as already present in Kafka."
-        )
+    # result, records = backpack_dispatcher.post()
+    #
+    # if "Error" in result:
+    #     click.secho(result, fg="red")
+    # elif "Warning" in result:
+    #     click.secho(result, fg="yellow")
+    # else:
+    #     click.secho("Data successfully sent!", fg="green")
+    #     click.echo("The following items were added to Kafka:")
+    #
+    #     click.echo("------")
+    #     for record in records:
+    #         value = record["value"]
+    #         click.echo(
+    #             f"{value['id']} "
+    #             f"{
+    #                 datetime.fromtimestamp(
+    #                     value['timestamp'], tz=UTC
+    #                 ).strftime('%Y-%m-%d %H:%M:%S')
+    #             } "
+    #             f"({value['latitude']},{value['longitude']}) "
+    #             f"{value['depth']} km "
+    #             f"M{value['magnitude']}"
+    #         )
+    #     click.echo("------")
+    #
+    #     click.echo(
+    #         "All entries missing from this list "
+    #         "have been identified as already present in Kafka."
+    #     )
