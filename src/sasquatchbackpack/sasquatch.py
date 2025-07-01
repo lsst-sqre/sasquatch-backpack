@@ -230,25 +230,26 @@ class BackpackDispatcher:
         @kafka_broker.publisher(self.config.namespace)
         async def dothing(self: Self) -> tuple[str, list]:
             records: list[dict] | None = self._get_source_records()
+
             if records is None:
                 return (
                     "No entries found, aborting POST request",
                     [],
                 )
-
-            if len(records) == 0:
-                records.append(
-                    {
-                        "value": {
-                            "timestamp": 1751402596,
-                            "id": "test",
-                            "latitude": 1,
-                            "longitude": 1,
-                            "depth": 1,
-                            "magnitude": 8,
-                        }
+            # Debugging
+            records.append(
+                {
+                    "value": {
+                        "timestamp": 1751402596,
+                        "id": "test",
+                        "latitude": 1,
+                        "longitude": 1,
+                        "depth": 1,
+                        "magnitude": 8,
                     }
-                )
+                }
+            )
+            if len(records) == 0:
                 return (
                     "All entries already present, aborting POST request",
                     records,
