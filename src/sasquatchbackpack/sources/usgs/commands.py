@@ -197,7 +197,7 @@ def usgs_earthquake_data(
         click.echo("Post mode is disabled: No data will be sent to Kafka.")
         return
 
-    click.echo("Post mode enabled: Sending data...")
+    click.echo(f"Post mode enabled: Sending data to {config.topic_name}...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
     loop = asyncio.new_event_loop()

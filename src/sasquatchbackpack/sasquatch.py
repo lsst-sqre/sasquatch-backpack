@@ -13,6 +13,7 @@ import nest_asyncio
 import redis.asyncio as redis
 import requests
 from faststream.kafka import KafkaBroker
+from pydantic.types import Json
 from safir.kafka import KafkaConnectionSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
@@ -228,14 +229,11 @@ class BackpackDispatcher:
         await kafka_broker.connect()
 
         @kafka_broker.publisher(self.config.namespace)
-        async def dothing(self: Self) -> tuple[str, list]:
+        async def dothing(self: Self) -> Json:
             records: list[dict] | None = self._get_source_records()
 
             if records is None:
-                return (
-                    "No entries found, aborting POST request",
-                    [],
-                )
+                return {}
             # Debugging
             records.append(
                 {
@@ -249,14 +247,9 @@ class BackpackDispatcher:
                     }
                 }
             )
-            if len(records) == 0:
-                return (
-                    "All entries already present, aborting POST request",
-                    records,
-                )
-            return "Sent thing", records
+            return records
 
-        return await dothing(self)
+        return self.config.namespace, await dothing(self)
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
