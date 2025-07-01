@@ -219,7 +219,7 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    async def direct_connect(self) -> None:
+    async def direct_connect(self) -> tuple[str, list]:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
         """
@@ -228,15 +228,22 @@ class BackpackDispatcher:
         await kafka_broker.connect()
 
         @kafka_broker.publisher(self.config.namespace)
-        async def dothing(self: Self) -> list[dict] | None:
+        async def dothing(self: Self) -> tuple[str, list]:
             records: list[dict] | None = self._get_source_records()
             if records is None:
-                return None
+                return (
+                    "Warning: No entries found, aborting POST request",
+                    [],
+                )
             if len(records) == 0:
-                return None
-            return records
+                return (
+                    "Warning: All entries already present,"
+                    " aborting POST request",
+                    records,
+                )
+            return "Sent thing", records
 
-        await dothing(self)
+        return await dothing(self)
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
