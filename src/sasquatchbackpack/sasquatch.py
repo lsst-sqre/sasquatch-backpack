@@ -143,10 +143,6 @@ class BackpackDispatcher:
             if redis_address == "default"
             else redis_address
         )
-        self.kafka_config = KafkaConnectionSettings()
-        self.kafka_broker = KafkaBroker(
-            **self.kafka_config.to_faststream_params()
-        )
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -227,6 +223,7 @@ class BackpackDispatcher:
         """
         kafka_config = KafkaConnectionSettings()
         kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+        await kafka_broker.connect()
 
         @kafka_broker.publisher(self.config.namespace)
         async def dothing(self: Self) -> list[dict] | None:
