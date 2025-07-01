@@ -232,7 +232,7 @@ class BackpackDispatcher:
             records: list[dict] | None = self._get_source_records()
             if records is None:
                 return (
-                    "Warning: No entries found, aborting POST request",
+                    "No entries found, aborting POST request",
                     [],
                 )
 
@@ -250,8 +250,7 @@ class BackpackDispatcher:
                     }
                 )
                 return (
-                    "Warning: All entries already present,"
-                    " aborting POST request",
+                    "All entries already present, aborting POST request",
                     records,
                 )
             return "Sent thing", records
