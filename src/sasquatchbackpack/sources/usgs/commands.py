@@ -201,10 +201,11 @@ def usgs_earthquake_data(
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
     loop = asyncio.new_event_loop()
-    loop.run_until_complete(backpack_dispatcher.direct_connect())
+    result, records = loop.run_until_complete(
+        backpack_dispatcher.direct_connect()
+    )
 
     click.echo("complete")
-    result, records = backpack_dispatcher.post()
 
     if "Error" in result:
         click.secho(result, fg="red")

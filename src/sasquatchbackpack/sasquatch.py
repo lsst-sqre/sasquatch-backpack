@@ -235,7 +235,20 @@ class BackpackDispatcher:
                     "Warning: No entries found, aborting POST request",
                     [],
                 )
+
             if len(records) == 0:
+                records.append(
+                    {
+                        "value": {
+                            "timestamp": 1751402596,
+                            "id": "test",
+                            "latitude": 1,
+                            "longitude": 1,
+                            "depth": 1,
+                            "magnitude": 8,
+                        }
+                    }
+                )
                 return (
                     "Warning: All entries already present,"
                     " aborting POST request",
