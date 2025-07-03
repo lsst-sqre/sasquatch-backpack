@@ -1,6 +1,7 @@
 """USGS CLI."""
 
 import asyncio
+import os
 from datetime import UTC, datetime, timedelta
 
 import click
@@ -205,7 +206,7 @@ def usgs_earthquake_data(
         backpack_dispatcher.direct_connect()
     )
 
-    click.echo("complete")
+    click.echo(f"Connected to kafka at {os.getenv('KAFKA_BOOTSTRAP_SERVERS')}")
 
     if "Error" in result:
         click.secho(result, fg="red")
