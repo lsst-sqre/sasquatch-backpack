@@ -220,7 +220,7 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    async def direct_connect(self) -> tuple[KafkaConnectionSettings, list]:
+    async def direct_connect(self) -> tuple[str, list]:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
         """
@@ -228,7 +228,9 @@ class BackpackDispatcher:
         kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
         await kafka_broker.connect()
 
-        @kafka_broker.publisher(self.config.namespace)
+        @kafka_broker.publisher(
+            f"{self.config.namespace}.{self.source.topic_name}"
+        )
         async def dothing(self: Self) -> Json:
             records: list[dict] | None = self._get_source_records()
 
@@ -249,7 +251,10 @@ class BackpackDispatcher:
             )
             return records
 
-        return kafka_config, await dothing(self)
+        return (
+            f"{self.config.namespace}.{self.source.topic_name}",
+            await dothing(self),
+        )
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
