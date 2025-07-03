@@ -12,6 +12,7 @@ from typing import Self
 import nest_asyncio
 import redis.asyncio as redis
 import requests
+from faststream import FastStream
 from faststream.kafka import KafkaBroker
 from pydantic.types import Json
 from safir.kafka import KafkaConnectionSettings
@@ -226,6 +227,7 @@ class BackpackDispatcher:
         """
         kafka_config = KafkaConnectionSettings()
         kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+        app = FastStream(kafka_broker)  # noqa: F841
         await kafka_broker.connect()
 
         @kafka_broker.publisher(
