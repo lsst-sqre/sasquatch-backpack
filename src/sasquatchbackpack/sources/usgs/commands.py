@@ -1,7 +1,6 @@
 """USGS CLI."""
 
 import asyncio
-import os
 from datetime import UTC, datetime, timedelta
 
 import click
@@ -202,11 +201,17 @@ def usgs_earthquake_data(
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
     loop = asyncio.new_event_loop()
-    result, records = loop.run_until_complete(
+    settings, records = loop.run_until_complete(
         backpack_dispatcher.direct_connect()
     )
+    result = "test"
 
-    click.echo(f"Connected to kafka at {os.getenv('KAFKA_BOOTSTRAP_SERVERS')}")
+    click.echo("---")
+    click.echo(settings.bootstrap_servers)
+    click.echo(settings.client_cert_path)
+    click.echo(settings.client_key_path)
+    click.echo(settings.cluster_ca_path)
+    click.echo("---")
 
     if "Error" in result:
         click.secho(result, fg="red")

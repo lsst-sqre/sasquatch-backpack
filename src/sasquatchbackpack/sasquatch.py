@@ -220,7 +220,7 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    async def direct_connect(self) -> tuple[str, list]:
+    async def direct_connect(self) -> tuple[KafkaConnectionSettings, list]:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
         """
@@ -249,7 +249,7 @@ class BackpackDispatcher:
             )
             return records
 
-        return self.config.namespace, await dothing(self)
+        return kafka_config, await dothing(self)
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
