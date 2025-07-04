@@ -8,14 +8,20 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
 
+import nest_asyncio
 import redis.asyncio as redis
 import requests
+from faststream import FastStream
+from faststream.kafka import KafkaBroker
+from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
+from pydantic import ValidationError
+from pydantic.types import Json
+from safir.kafka import KafkaConnectionSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
-# ruff: noqa:TD002
-# ruff: noqa:TD003
+# ruff: noqa:ERA001
 
 
 class DataSource(ABC):
@@ -56,6 +62,7 @@ class RedisManager:
         self.address = address
         self.model = redis.from_url(self.address)
 
+        nest_asyncio.apply()
         self.loop = asyncio.new_event_loop()
 
     def store(self, key: str, item: str = "value") -> None:
@@ -111,6 +118,42 @@ class DispatcherConfig:
         default=os.getenv("BACKPACK_REDIS_URL", "redis://localhost:6379/0")
     )
     """Address of Redis server"""
+
+
+# Handle kafka direct connection
+try:
+    kafka_config = KafkaConnectionSettings()
+    kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+    app = FastStream(kafka_broker)
+except ValidationError:
+    pass
+
+
+async def dothing(
+    records: list[dict] | None, publisher: AsyncAPIDefaultPublisher
+) -> Json:
+    await kafka_broker.connect()
+
+    if records is None:
+        return {}
+    # Debugging
+    records.append(
+        {
+            "value": {
+                "timestamp": 1751402596,
+                "id": "test",
+                "latitude": 1,
+                "longitude": 1,
+                "depth": 1,
+                "magnitude": 8,
+            }
+        }
+    )
+    await publisher.publish(
+        records,
+        headers={"content-type": "application/json"},
+    )
+    return records
 
 
 class BackpackDispatcher:
@@ -201,7 +244,7 @@ class BackpackDispatcher:
             List with duplicate elements in common with those
             on the redis server removed.
         """
-        records = self.source.get_records()
+        records: list[dict] = self.source.get_records()
 
         if len(records) == 0:
             return None
@@ -214,6 +257,22 @@ class BackpackDispatcher:
             for record in records
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
+
+    def direct_connect(self) -> tuple[str, list]:
+        """Assemble a schema and payload from the given source,
+        and route data directly to kafka.
+        """
+        prepared_publisher = kafka_broker.publisher(
+            f"{self.config.namespace}.{self.source.topic_name}"
+        )
+
+        loop = asyncio.new_event_loop()
+        return (
+            f"{self.config.namespace}.{self.source.topic_name}",
+            loop.run_until_complete(
+                dothing(self._get_source_records(), prepared_publisher)
+            ),
+        )
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
@@ -240,27 +299,28 @@ class BackpackDispatcher:
                 records,
             )
 
-        payload = {"value_schema": self.schema, "records": records}
-
-        url = (
-            f"{self.config.sasquatch_rest_proxy_url}/topics/"
-            f"{self.config.namespace}.{self.source.topic_name}"
-        )
-
-        headers = {
-            "Content-Type": "application/vnd.kafka.avro.v2+json",
-            "Accept": "application/vnd.kafka.v2+json",
-        }
+        # payload = {"value_schema": self.schema, "records": records}
+        #
+        # url = (
+        #     f"{self.config.sasquatch_rest_proxy_url}/topics/"
+        #     f"{self.config.namespace}.{self.source.topic_name}"
+        # )
+        #
+        # headers = {
+        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
+        #     "Accept": "application/vnd.kafka.v2+json",
+        # }
 
         try:
-            response = requests.request(
-                "POST",
-                url,
-                json=payload,
-                headers=headers,
-                timeout=10,
-            )
-            response.raise_for_status()  # Raises HTTPError for bad responses
+            pass
+            # response = requests.request(
+            #     "POST",
+            #     url,
+            #     json=payload,
+            #     headers=headers,
+            #     timeout=10,
+            # )
+            # response.raise_for_status()  # Raises HTTPError for bad responses
 
         except requests.RequestException as e:
             return f"Error POSTing data: {e}", records
@@ -269,4 +329,4 @@ class BackpackDispatcher:
             for record in records:
                 self.redis.store(self.source.get_redis_key(record))
 
-        return response.text, records
+        return "working :3", []  # response.text, records
