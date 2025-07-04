@@ -15,7 +15,7 @@ from faststream import FastStream
 from faststream.kafka import KafkaBroker
 from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
 from pydantic.types import Json
-from safir.kafka import KafkaConnectionSettings
+from safir.kafka import KafkaConnectionSettings, SecurityProtocol
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
@@ -120,7 +120,12 @@ class DispatcherConfig:
 
 
 # Handle kafka direct connection
-kafka_config = KafkaConnectionSettings()
+kafka_config = KafkaConnectionSettings(
+    bootstrap_servers=str(os.getenv("KAFKA_BOOTSTRAP_SERVERS")),
+    security_protocol=SecurityProtocol(
+        os.getenv("KAFKA_SECURITY_PROTOCOL", "PLAINTEXT")
+    ),
+)
 kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
 app = FastStream(kafka_broker)
 
