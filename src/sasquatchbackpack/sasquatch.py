@@ -7,13 +7,13 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from string import Template
-from typing import Self
 
 import nest_asyncio
 import redis.asyncio as redis
 import requests
 from faststream import FastStream
 from faststream.kafka import KafkaBroker
+from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
 from pydantic.types import Json
 from safir.kafka import KafkaConnectionSettings
 
@@ -119,6 +119,39 @@ class DispatcherConfig:
     """Address of Redis server"""
 
 
+# Handle kafka direct connection
+kafka_config = KafkaConnectionSettings()
+kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+app = FastStream(kafka_broker)
+
+
+async def dothing(
+    records: list[dict] | None, publisher: AsyncAPIDefaultPublisher
+) -> Json:
+    await kafka_broker.connect()
+
+    if records is None:
+        return {}
+    # Debugging
+    records.append(
+        {
+            "value": {
+                "timestamp": 1751402596,
+                "id": "test",
+                "latitude": 1,
+                "longitude": 1,
+                "depth": 1,
+                "magnitude": 8,
+            }
+        }
+    )
+    await publisher.publish(
+        records,
+        headers={"content-type": "application/json"},
+    )
+    return records
+
+
 class BackpackDispatcher:
     """A class to send backpack data to kafka.
 
@@ -221,41 +254,20 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    async def direct_connect(self) -> tuple[str, list]:
+    def direct_connect(self) -> tuple[str, list]:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
         """
-        kafka_config = KafkaConnectionSettings()
-        kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
-        app = FastStream(kafka_broker)  # noqa: F841
-        await kafka_broker.connect()
-
-        @kafka_broker.publisher(
+        prepared_publisher = kafka_broker.publisher(
             f"{self.config.namespace}.{self.source.topic_name}"
         )
-        async def dothing(self: Self) -> Json:
-            records: list[dict] | None = self._get_source_records()
 
-            if records is None:
-                return {}
-            # Debugging
-            records.append(
-                {
-                    "value": {
-                        "timestamp": 1751402596,
-                        "id": "test",
-                        "latitude": 1,
-                        "longitude": 1,
-                        "depth": 1,
-                        "magnitude": 8,
-                    }
-                }
-            )
-            return records
-
+        loop = asyncio.new_event_loop()
         return (
             f"{self.config.namespace}.{self.source.topic_name}",
-            await dothing(self),
+            loop.run_until_complete(
+                dothing(self._get_source_records(), prepared_publisher)
+            ),
         )
 
     def post(self) -> tuple[str, list]:
