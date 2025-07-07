@@ -15,7 +15,6 @@ from faststream import FastStream
 from faststream.kafka import KafkaBroker
 from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
 from pydantic import ValidationError
-from pydantic.types import Json
 from safir.kafka import KafkaConnectionSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
@@ -129,31 +128,25 @@ except ValidationError:
     pass
 
 
-async def dothing(
-    records: list[dict] | None, publisher: AsyncAPIDefaultPublisher
-) -> Json:
+async def dispatch(
+    records: list[dict], publisher: AsyncAPIDefaultPublisher
+) -> None:
+    """Connect to a kafka server and publish records.
+
+    Parameters
+    ----------
+    records: list[dict]
+        Output of a source.get_records() call.
+    publisher: AsyncAPIDefaultPublisher
+        Preconfigured publisher containing the destination kafka-topic
+    """
     await kafka_broker.connect()
 
-    if records is None:
-        return {}
-    # Debugging
-    records.append(
-        {
-            "value": {
-                "timestamp": 1751402596,
-                "id": "test",
-                "latitude": 1,
-                "longitude": 1,
-                "depth": 1,
-                "magnitude": 8,
-            }
-        }
-    )
-    await publisher.publish(
+    test = await publisher.publish(
         records,
         headers={"content-type": "application/json"},
     )
-    return records
+    print(f"variable- {test}\ntype- {type(test)}")  # noqa: T201
 
 
 class BackpackDispatcher:
@@ -261,18 +254,34 @@ class BackpackDispatcher:
     def direct_connect(self) -> tuple[str, list]:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
+
+        Returns
+        -------
+        str
+            Status message for the operation.
         """
+        records = self._get_source_records()
+
+        if records is None:
+            return (
+                "Warning: No entries found, aborting POST request",
+                [],
+            )
+
+        if len(records) == 0:
+            return (
+                "Warning: All entries already present, aborting POST request",
+                records,
+            )
+
         prepared_publisher = kafka_broker.publisher(
             f"{self.config.namespace}.{self.source.topic_name}"
         )
 
         loop = asyncio.new_event_loop()
-        return (
-            f"{self.config.namespace}.{self.source.topic_name}",
-            loop.run_until_complete(
-                dothing(self._get_source_records(), prepared_publisher)
-            ),
-        )
+        loop.run_until_complete(dispatch(records, prepared_publisher))
+
+        return (f"{self.config.namespace}.{self.source.topic_name}", records)
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
