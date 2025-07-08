@@ -140,9 +140,9 @@ async def dispatch(
     publisher: AsyncAPIDefaultPublisher
         Preconfigured publisher containing the destination kafka-topic
     """
-    await kafka_broker.connect()
+    test = await kafka_broker.connect()
 
-    test = await publisher.publish(
+    await publisher.publish(
         records,
         headers={"content-type": "application/json"},
     )
