@@ -200,7 +200,7 @@ def usgs_earthquake_data(
     click.echo(f"Post mode enabled: Sending data to {config.topic_name}...")
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
-    result, records = backpack_dispatcher.direct_connect()
+    result, records = backpack_dispatcher.publish()
 
     click.echo(f"Connected to kafka at {os.getenv('KAFKA_BOOTSTRAP_SERVERS')}")
 

@@ -6,6 +6,7 @@ import asyncio
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import Enum
 from string import Template
 
 import nest_asyncio
@@ -184,6 +185,13 @@ class BackpackDispatcher:
             else redis_address
         )
 
+    class PublishMethod(Enum):
+        """Avenues through which data can be sent to kafka."""
+
+        NONE = 0
+        DIRECT_CONNECTION = 1
+        REST_API = 2
+
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
 
@@ -257,13 +265,15 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    def direct_connect(self) -> tuple[str, list]:
+    def publish(
+        self, *, method: PublishMethod = PublishMethod.DIRECT_CONNECTION
+    ) -> tuple[str, list]:
         """Assemble a schema and payload from the given source,
         and route data directly to kafka.
 
         Returns
         -------
-        str
+        response: str
             Status message for the operation.
         records: list
             List of entries with those already stored on remote removed
@@ -282,49 +292,71 @@ class BackpackDispatcher:
                 records,
             )
 
+        response = None
+        match method:
+            case self.PublishMethod.DIRECT_CONNECTION:
+                response = self._direct_connect(records)
+            case self.PublishMethod.REST_API:
+                response = self._rest_api_post(records)
+
+        if response is None:
+            return (
+                f"Error: No publisher found for {method}"
+                "please specify a valid PublishMethod",
+                records,
+            )
+
+        # Adds items to redis if the source uses redis
+        # and the call has not failed
+        if self.source.uses_redis and "Error" not in response:
+            for record in records:
+                self.redis.store(self.source.get_redis_key(record))
+
+        return response, records
+
+    def _direct_connect(self, processed_records: list[dict]) -> str:
+        """Assemble a schema and payload from the given source,
+        and route data directly to kafka.
+
+        Parameters
+        ----------
+        processed_records: list[dict]
+            List of entries with those already stored on remote removed
+
+        Returns
+        -------
+        str
+            Status message for the operation.
+        """
         prepared_publisher = kafka_broker.publisher(
             f"{self.config.namespace}.{self.source.topic_name}"
         )
 
         loop = asyncio.new_event_loop()
         result: Exception | None = loop.run_until_complete(
-            dispatch(records, prepared_publisher)
+            dispatch(processed_records, prepared_publisher)
         )
 
         if result is not None:
-            return (
-                f"Connection Error :( Check kafka auth secrets.\n{result}",
-                records,
-            )
+            return f"Connection Error :( Check kafka auth secrets.\n{result}"
 
-        return ("Data sent successfully :D", records)
+        return "Data sent successfully :D"
 
-    def post(self) -> tuple[str, list]:
+    def _rest_api_post(self, processed_records: list[dict]) -> str:
         """Assemble schema and payload from the given source, then
         makes a POST request to kafka.
+
+        Parameters
+        ----------
+        processed_records: list[dict]
+            List of entries with those already stored on remote removed
 
         Returns
         -------
         response-text : str
             The results of the POST request in string format
-        records : list
-            List of entries with those already stored on remote removed
         """
-        records = self._get_source_records()
-
-        if records is None:
-            return (
-                "Warning: No entries found, aborting POST request",
-                [],
-            )
-
-        if len(records) == 0:
-            return (
-                "Warning: All entries already present, aborting POST request",
-                records,
-            )
-
-        payload = {"value_schema": self.schema, "records": records}
+        payload = {"value_schema": self.schema, "records": processed_records}
 
         url = (
             f"{self.config.sasquatch_rest_proxy_url}/topics/"
@@ -347,10 +379,6 @@ class BackpackDispatcher:
             response.raise_for_status()  # Raises HTTPError for bad responses
 
         except requests.RequestException as e:
-            return f"Error POSTing data: {e}", records
+            return f"Error POSTing data: {e}"
 
-        if self.source.uses_redis:
-            for record in records:
-                self.redis.store(self.source.get_redis_key(record))
-
-        return response.text, records
+        return response.text
