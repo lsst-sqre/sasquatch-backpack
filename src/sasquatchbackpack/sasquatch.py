@@ -282,13 +282,13 @@ class BackpackDispatcher:
 
         if records is None:
             return (
-                "Warning: No entries found, aborting POST request",
+                "Warning: No entries found, aborting publish",
                 [],
             )
 
         if len(records) == 0:
             return (
-                "Warning: All entries already present, aborting POST request",
+                "Warning: All entries already present, aborting publish",
                 records,
             )
 
