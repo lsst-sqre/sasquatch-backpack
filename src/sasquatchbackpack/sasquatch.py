@@ -20,8 +20,6 @@ from safir.kafka import KafkaConnectionSettings
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
 
-# ruff: noqa:ERA001
-
 
 class DataSource(ABC):
     """Base class for all relevant backpack data sources.
@@ -130,7 +128,7 @@ except ValidationError:
 
 async def dispatch(
     records: list[dict], publisher: AsyncAPIDefaultPublisher
-) -> None:
+) -> Exception | None:
     """Connect to a kafka server and publish records.
 
     Parameters
@@ -139,14 +137,22 @@ async def dispatch(
         Output of a source.get_records() call.
     publisher: AsyncAPIDefaultPublisher
         Preconfigured publisher containing the destination kafka-topic
+
+    Return
+    ------
+    bool
+        Whether or not the connection succeeded
     """
-    test = await kafka_broker.connect()
+    try:
+        await kafka_broker.connect()
+    except Exception as e:
+        return e
 
     await publisher.publish(
         records,
         headers={"content-type": "application/json"},
     )
-    print(f"variable- {test}\ntype- {type(test)}")  # noqa: T201
+    return None
 
 
 class BackpackDispatcher:
@@ -259,6 +265,8 @@ class BackpackDispatcher:
         -------
         str
             Status message for the operation.
+        records: list
+            List of entries with those already stored on remote removed
         """
         records = self._get_source_records()
 
@@ -279,9 +287,17 @@ class BackpackDispatcher:
         )
 
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(dispatch(records, prepared_publisher))
+        result: Exception | None = loop.run_until_complete(
+            dispatch(records, prepared_publisher)
+        )
 
-        return (f"{self.config.namespace}.{self.source.topic_name}", records)
+        if result is not None:
+            return (
+                f"Connection Error :( Check kafka auth secrets.\n{result}",
+                records,
+            )
+
+        return ("Data sent successfully :D", records)
 
     def post(self) -> tuple[str, list]:
         """Assemble schema and payload from the given source, then
@@ -292,7 +308,7 @@ class BackpackDispatcher:
         response-text : str
             The results of the POST request in string format
         records : list
-            List of earthquakes with those already stored on remote removed
+            List of entries with those already stored on remote removed
         """
         records = self._get_source_records()
 
@@ -308,28 +324,27 @@ class BackpackDispatcher:
                 records,
             )
 
-        # payload = {"value_schema": self.schema, "records": records}
-        #
-        # url = (
-        #     f"{self.config.sasquatch_rest_proxy_url}/topics/"
-        #     f"{self.config.namespace}.{self.source.topic_name}"
-        # )
-        #
-        # headers = {
-        #     "Content-Type": "application/vnd.kafka.avro.v2+json",
-        #     "Accept": "application/vnd.kafka.v2+json",
-        # }
+        payload = {"value_schema": self.schema, "records": records}
+
+        url = (
+            f"{self.config.sasquatch_rest_proxy_url}/topics/"
+            f"{self.config.namespace}.{self.source.topic_name}"
+        )
+
+        headers = {
+            "Content-Type": "application/vnd.kafka.avro.v2+json",
+            "Accept": "application/vnd.kafka.v2+json",
+        }
 
         try:
-            pass
-            # response = requests.request(
-            #     "POST",
-            #     url,
-            #     json=payload,
-            #     headers=headers,
-            #     timeout=10,
-            # )
-            # response.raise_for_status()  # Raises HTTPError for bad responses
+            response = requests.request(
+                "POST",
+                url,
+                json=payload,
+                headers=headers,
+                timeout=10,
+            )
+            response.raise_for_status()  # Raises HTTPError for bad responses
 
         except requests.RequestException as e:
             return f"Error POSTing data: {e}", records
@@ -338,4 +353,4 @@ class BackpackDispatcher:
             for record in records:
                 self.redis.store(self.source.get_redis_key(record))
 
-        return "working :3", []  # response.text, records
+        return response.text, records
