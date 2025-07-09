@@ -1,12 +1,17 @@
 """Handles dispatch of backpack data to kafka."""
 
-__all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
+__all__ = [
+    "BackpackDispatcher",
+    "DataSource",
+    "DispatcherConfig",
+    "PublishMethod",
+]
 
 import asyncio
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from string import Template
 
 import nest_asyncio
@@ -118,12 +123,12 @@ class DispatcherConfig:
     """Address of Redis server"""
 
 
-class PublishMethod(Enum):
+class PublishMethod(StrEnum):
     """Avenues through which data can be sent to kafka."""
 
-    NONE = 0
-    DIRECT_CONNECTION = 1
-    REST_API = 2
+    NONE = "None"
+    DIRECT_CONNECTION = "Direct Connection"
+    REST_API = "REST API"
 
 
 # Handle kafka direct connection
