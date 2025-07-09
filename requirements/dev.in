@@ -18,6 +18,7 @@ pytest
 pytest-asyncio
 pytest-cov
 ruff
+testcontainers
 
 # Documentation
 documenteer[guide]
