@@ -78,6 +78,11 @@ Use this as an opportunity to debug your commands so they work as intended befor
 
 Add Schemas
 ===========
+
+.. warning ::
+
+    Sasquatch-backpack version 0.4.0 does not support non-json schemas in its default publishing method. Support is planned, but in the meantime either opt to use the old publish method (PublishMethod.REST_API), or serialize any schema data to json before publishing.
+
 `Sasquatch <https://sasquatch.lsst.io>`__ (the wearer of the proverbial backpack), uses `Avro schemas <https://sasquatch.lsst.io/user-guide/avro.html>`__ for data serialization.
 Navigate to your Datasource's folder and create a ``schemas.py`` file for your Datasource.
 Inside, use `pydantic's AvroBaseModel <https://marcosschroh.github.io/dataclasses-avroschema/pydantic/>`__ to create an avro schema.
@@ -100,7 +105,7 @@ Below is a quick sample of usage.
             """Schema metadata."""
 
             namespace = "$namespace"
-            schema_name = "$topic_name"
+            schema_name = "topic_name_goes_here"
 
 Make one such schema for each command or API call you wish to make.
 Each schema should reflect the data each of its objects will send to sasquatch.
@@ -123,7 +128,8 @@ While not required, giving each entry a unique ID is strongly reccommended to id
 Note 3: Meta
 ------------
 The Meta subclass is required, and must contain both namespace and schema_name values.
-These will be replaced with their actual values later on when the file is parsed, so simply keep their values as shown above, in "$thing" format.
+The namespace will be replaced with its actual value later on when the file is parsed, so simply keep its value as shown above, in "$thing" format.
+The schema_name, on the other hand, should be hardcoded in.
 
 Add Configs
 ===========
@@ -227,7 +233,7 @@ Then, import ``sasquatchbackpack.sasquatch`` and add the following:
         source
     )
 
-    result, records = backpack_dispatcher.post()
+    result, records = backpack_dispatcher.publish()
 
     if "Error" in result:
         click.secho(result, fg="red")
