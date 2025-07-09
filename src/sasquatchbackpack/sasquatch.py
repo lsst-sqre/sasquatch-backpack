@@ -118,6 +118,14 @@ class DispatcherConfig:
     """Address of Redis server"""
 
 
+class PublishMethod(Enum):
+    """Avenues through which data can be sent to kafka."""
+
+    NONE = 0
+    DIRECT_CONNECTION = 1
+    REST_API = 2
+
+
 # Handle kafka direct connection
 try:
     kafka_config = KafkaConnectionSettings()
@@ -184,13 +192,6 @@ class BackpackDispatcher:
             if redis_address == "default"
             else redis_address
         )
-
-    class PublishMethod(Enum):
-        """Avenues through which data can be sent to kafka."""
-
-        NONE = 0
-        DIRECT_CONNECTION = 1
-        REST_API = 2
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -294,9 +295,9 @@ class BackpackDispatcher:
 
         response = None
         match method:
-            case self.PublishMethod.DIRECT_CONNECTION:
+            case PublishMethod.DIRECT_CONNECTION:
                 response = self._direct_connect(records)
-            case self.PublishMethod.REST_API:
+            case PublishMethod.REST_API:
                 response = self._rest_api_post(records)
 
         if response is None:
