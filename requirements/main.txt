@@ -404,9 +404,9 @@ fast-depends==2.4.12 \
     --hash=sha256:9393e6de827f7afa0141e54fa9553b737396aaf06bd0040e159d1f790487b16d \
     --hash=sha256:9e5d110ddc962329e46c9b35e5fe65655984247a13ee3ca5a33186db7d2d75c2
     # via faststream
-fastapi==0.116.0 \
-    --hash=sha256:80dc0794627af0390353a6d1171618276616310d37d24faba6648398e57d687a \
-    --hash=sha256:fdcc9ed272eaef038952923bef2b735c02372402d1203ee1210af4eea7a78d2b
+fastapi==0.116.1 \
+    --hash=sha256:c46ac7c312df840f0c9e220f7964bada936781bc4e2e6eb71f1c4d7553786565 \
+    --hash=sha256:ed52cbf946abfd70c5a0dccb24673f0670deeb517a88b3544d03c2a6bf283143
     # via safir
 fastavro==1.11.1 \
     --hash=sha256:0253e5b6a3c9b62fae9fc3abd8184c5b64a833322b6af7d666d3db266ad879b5 \
@@ -1478,13 +1478,13 @@ rpds-py==0.26.0 \
     # via
     #   jsonschema
     #   referencing
-safir==11.0.0 \
-    --hash=sha256:2d8ea70798da18a4471e08e37cc3a359c731245af00cb9d6f9903bb6954e20c3 \
-    --hash=sha256:e15bacc7493580fee02fc874fea68e508a1f9c477b829ab0968a6f1f18c040a3
+safir==11.1.0 \
+    --hash=sha256:85ddaf30c51b78e631f609d99748796dd4b4d989fff7a28c7f71113683e4cafa \
+    --hash=sha256:ad2cbe894dd421b436ebdc84b0991c0aad93db92ac2d1d8ce44f343abd7481b1
     # via -r requirements/main.in
-safir-logging==11.0.0 \
-    --hash=sha256:3dc8107dc276146ca415a3c809b454b2fd7c46f13293acae31158c45f299580f \
-    --hash=sha256:450f2d700bb26fc6a9b8471c8604f84fbcd137785ef1b2dab738d7b6d7e5bfcd
+safir-logging==11.1.0 \
+    --hash=sha256:2dcc6a04258242ce90b1727cf9228a870de24de9da0fdd10dd03bcafb36b7f21 \
+    --hash=sha256:d66adcbd3fbe9abe6b0a6e7803e98d006a1f95327898477928076fce321e0b69
     # via safir
 scipy==1.16.0 \
     --hash=sha256:03931b4e870c6fef5b5c0970d52c9f6ddd8c8d3e934a98f09308377eba6f3824 \
@@ -1634,9 +1634,9 @@ sqlalchemy==1.4.54 \
     --hash=sha256:fb59a11689ff3c58e7652260127f9e34f7f45478a2f3ef831ab6db7bcd72108f \
     --hash=sha256:fc9ffd9a38e21fad3e8c5a88926d57f94a32546e937e0be46142b2702003eba7
     # via obspy
-starlette==0.46.2 \
-    --hash=sha256:595633ce89f8ffa71a015caed34a5b2dc1c0cdb3f0f1fbd1e69339cf2abeec35 \
-    --hash=sha256:7f7361f34eed179294600af672f565727419830b54b7b084efe44bb82d2fccd5
+starlette==0.47.1 \
+    --hash=sha256:5e11c9f5c7c3f24959edbf2dffdc01bba860228acf657129467d8a7468591527 \
+    --hash=sha256:aef012dd2b6be325ffa16698f9dc533614fb1cebd593a906b90dc1025529a79b
     # via
     #   fastapi
     #   safir
