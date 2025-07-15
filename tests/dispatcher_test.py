@@ -3,6 +3,7 @@
 import os
 
 from dataclasses_avroschema.pydantic import AvroBaseModel
+from faststream.kafka import KafkaBroker
 from pydantic import Field
 
 from sasquatchbackpack import sasquatch
@@ -36,10 +37,12 @@ class TestSource(sasquatch.DataSource):
         return f"{self.topic_name}:{datapoint['value']['id']}"
 
 
-def test_get_source_records() -> None:
+def test_get_source_records(kafka_broker: KafkaBroker) -> None:
     source = TestSource([{"id": "abc123"}, {"id": "123abc"}])
     dispatcher = sasquatch.BackpackDispatcher(
-        source, "redis://localhost:" + os.environ["REDIS_6379_TCP_PORT"] + "/0"
+        source,
+        "redis://localhost:" + os.environ["REDIS_6379_TCP_PORT"] + "/0",
+        kafka_broker,
     )
     dispatcher.redis.store("test:abc123")
 
@@ -48,3 +51,15 @@ def test_get_source_records() -> None:
     assert result is not None
 
     assert dispatcher._get_source_records() == [{"value": {"id": "123abc"}}]
+
+
+def test_publish(kafka_broker: KafkaBroker) -> None:
+    source = TestSource([{"id": "abc123"}, {"id": "123abc"}])
+    dispatcher = sasquatch.BackpackDispatcher(
+        source,
+        "redis://localhost:" + os.environ["REDIS_6379_TCP_PORT"] + "/0",
+        kafka_broker,
+    )
+    result, items = dispatcher.publish()
+
+    assert "Error" not in result

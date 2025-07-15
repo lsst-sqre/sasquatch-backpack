@@ -18,7 +18,7 @@ pytest
 pytest-asyncio
 pytest-cov
 ruff
-testcontainers
+safir[testcontainers]
 
 # Documentation
 documenteer[guide]

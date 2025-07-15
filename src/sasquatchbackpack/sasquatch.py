@@ -65,9 +65,6 @@ class RedisManager:
         self.address = address
         self.model = redis.from_url(self.address)
 
-        nest_asyncio.apply()
-        self.loop = asyncio.new_event_loop()
-
     def store(self, key: str, item: str = "value") -> None:
         """Store a key value pair in the provided redis server.
 
@@ -78,7 +75,7 @@ class RedisManager:
         item : str
             Value that will be stored. Defaults to "value".
         """
-        self.loop.run_until_complete(self.model.set(key, item))
+        asyncio.run(self.model.set(key, item))
 
     def get(self, key: str) -> str | None:
         """Query a key from the provided redis server and return its value.
@@ -93,7 +90,7 @@ class RedisManager:
         str
             Queried value. Returns None if value is not found.
         """
-        return self.loop.run_until_complete(self.model.get(key))
+        return asyncio.run(self.model.get(key))
 
 
 @dataclass
@@ -126,9 +123,9 @@ class DispatcherConfig:
 class PublishMethod(StrEnum):
     """Avenues through which data can be sent to kafka."""
 
-    NONE = "None"
-    DIRECT_CONNECTION = "Direct Connection"
-    REST_API = "REST API"
+    NONE = "NONE"
+    DIRECT_CONNECTION = "DIRECT_CONNECTION"
+    REST_API = "REST_API"
 
 
 # Handle kafka direct connection
@@ -141,7 +138,9 @@ except ValidationError:
 
 
 async def dispatch(
-    records: list[dict], publisher: AsyncAPIDefaultPublisher
+    records: list[dict],
+    broker: KafkaBroker,
+    publisher: AsyncAPIDefaultPublisher,
 ) -> Exception | None:
     """Connect to a kafka server and publish records.
 
@@ -154,11 +153,11 @@ async def dispatch(
 
     Return
     ------
-    bool
-        Whether or not the connection succeeded
+    Exception | None
+        Returns an exception if the connection failed.
     """
     try:
-        await kafka_broker.connect()
+        await broker.connect()
     except Exception as e:
         return e
 
@@ -176,14 +175,17 @@ class BackpackDispatcher:
     ----------
     source : DataSource
         DataSource containing schema and record data to be
-        posted to remote
+        published to remote
     config : DispatcherConfig
         Item that transmits other relevant information to
         the Dispatcher
     """
 
     def __init__(
-        self, source: DataSource, redis_address: str = "default"
+        self,
+        source: DataSource,
+        redis_address: str = "default",
+        broker_in: KafkaBroker | None = None,
     ) -> None:
         self.source = source
         self.config = DispatcherConfig()
@@ -192,11 +194,20 @@ class BackpackDispatcher:
                 "namespace": self.config.namespace,
             }
         )
+        nest_asyncio.apply()
         self.redis = RedisManager(
             self.config.redis_address
             if redis_address == "default"
             else redis_address
         )
+
+        try:
+            local_broker = kafka_broker
+            self.broker = broker_in if broker_in is not None else local_broker
+        except NameError:
+            if broker_in is None:
+                raise ValueError from None
+            self.broker = broker_in
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -334,13 +345,12 @@ class BackpackDispatcher:
         str
             Status message for the operation.
         """
-        prepared_publisher = kafka_broker.publisher(
+        prepared_publisher = self.broker.publisher(
             f"{self.config.namespace}.{self.source.topic_name}"
         )
 
-        loop = asyncio.new_event_loop()
-        result: Exception | None = loop.run_until_complete(
-            dispatch(processed_records, prepared_publisher)
+        result: Exception | None = asyncio.run(
+            dispatch(processed_records, self.broker, prepared_publisher)
         )
 
         if result is not None:
