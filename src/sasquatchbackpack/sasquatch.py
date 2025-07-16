@@ -137,7 +137,7 @@ except ValidationError:
     pass
 
 
-async def dispatch(
+async def _dispatch(
     records: list[dict],
     broker: KafkaBroker,
     publisher: AsyncAPIDefaultPublisher,
@@ -148,6 +148,8 @@ async def dispatch(
     ----------
     records: list[dict]
         Output of a source.get_records() call.
+    broker: faststream.kafka.KafkaBroker
+        faststream broker configured for the kafka connection
     publisher: AsyncAPIDefaultPublisher
         Preconfigured publisher containing the destination kafka-topic
 
@@ -176,9 +178,12 @@ class BackpackDispatcher:
     source : DataSource
         DataSource containing schema and record data to be
         published to remote
-    config : DispatcherConfig
-        Item that transmits other relevant information to
-        the Dispatcher
+    redis_address : str
+        Location to look for a redis server. Will look for one if left empty,
+        used for testing.
+    broker_in: faststream.kafka.KafkaBroker
+        Reference to a preconfigured broker. Will create one if left empty,
+        used for testing.
     """
 
     def __init__(
@@ -350,7 +355,7 @@ class BackpackDispatcher:
         )
 
         result: Exception | None = asyncio.run(
-            dispatch(processed_records, self.broker, prepared_publisher)
+            _dispatch(processed_records, self.broker, prepared_publisher)
         )
 
         if result is not None:
