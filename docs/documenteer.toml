@@ -7,11 +7,9 @@ package = "sasquatchbackpack"
 
 [sphinx]
 rst_epilog_file = "_rst_epilog.rst"
-disable_primary_sidebars = [
-    "index",
-    "changelog",
-]
+disable_primary_sidebars = ["index", "changelog"]
 extensions = ['sphinx_click']
+nitpick_ignore = [["py:class", "faststream.kafka.KafkaBroker"]]
 
 [sphinx.intersphinx.projects]
 python = "https://docs.python.org/3/"

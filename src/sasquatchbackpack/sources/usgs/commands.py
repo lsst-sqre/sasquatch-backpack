@@ -1,11 +1,16 @@
 """USGS CLI."""
 
+import os
 from datetime import UTC, datetime, timedelta
 
 import click
 
 from sasquatchbackpack import sasquatch
 from sasquatchbackpack.sources.usgs import scripts
+
+DEFAULT_PUBLISH_TOGGLE = False
+
+DEFAULT_PUBLISH_METHOD = sasquatch.PublishMethod.DIRECT_CONNECTION
 
 DEFAULT_RADIUS = 400
 
@@ -100,6 +105,20 @@ cannot excede your provided maximum magnitude ({upper})."""
     return value
 
 
+def check_publish_method(
+    ctx: click.Context, param: dict, value: str
+) -> sasquatch.PublishMethod:
+    """Validate magnitude bounds."""
+    try:
+        return sasquatch.PublishMethod(value)
+    except ValueError:
+        pass
+
+    raise click.BadParameter(
+        f"{value} did not match an existing publish method. Please try again."
+    )
+
+
 @click.command()
 @click.option(
     "-d",
@@ -138,27 +157,39 @@ cannot excede your provided maximum magnitude ({upper})."""
     callback=check_magnitude_bounds,
 )
 @click.option(
-    "--post",
+    "--publish",
+    "--post",  # for backwards compatability
     is_flag=True,
-    default=False,
+    default=DEFAULT_PUBLISH_TOGGLE,
     help=(
-        "Allows the user to specify that the API output should be "
-        "posted to kafka"
+        "Allows the user to specify that the output should be "
+        "published to kafka"
     ),
+)
+@click.option(
+    "-pm",
+    "--publish-method",
+    help="How backpack should go about getting data to sasquatch",
+    default=DEFAULT_PUBLISH_METHOD,
+    type=str,
+    show_default=True,
+    callback=check_publish_method,
 )
 def usgs_earthquake_data(
     duration: tuple[int, int],
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
-    post: bool,  # noqa: FBT001
+    publish: bool,  # noqa: FBT001
+    publish_method: sasquatch.PublishMethod,
 ) -> None:
     """Seaches USGS databases for relevant earthquake data and prints it
-    to console. Optionally, also allows the user to post the
+    to console. Optionally, also allows the user to publish the
     queried data to kafka.
     """
     click.echo(
-        f"Querying USGS with post mode {'enabled' if post else 'disabled'}..."
+        "Querying USGS with publish mode"
+        f" {'enabled' if publish else 'disabled'}..."
     )
 
     days, hours = duration
@@ -168,7 +199,6 @@ def usgs_earthquake_data(
         total_duration, radius, coords, magnitude_bounds
     )
     source = scripts.USGSSource(config)
-    backpack_dispatcher = sasquatch.BackpackDispatcher(source)
 
     results = scripts.search_api(
         total_duration,
@@ -192,14 +222,29 @@ def usgs_earthquake_data(
         click.echo("------")
         return
 
-    if not post:
-        click.echo("Post mode is disabled: No data will be sent to Kafka.")
+    if not publish:
+        click.echo(
+            "Publish mode is disabled: No data will be sent to Kafka."
+            "\n You can enable it with the --publish flag"
+        )
+        if publish_method != sasquatch.PublishMethod.DIRECT_CONNECTION:
+            click.echo(
+                "Hint: Changing the publish method does nothing if "
+                "--publish is not present"
+            )
         return
 
-    click.echo("Post mode enabled: Sending data...")
+    backpack_dispatcher = sasquatch.BackpackDispatcher(source)
+
+    click.echo(
+        f"Publish mode enabled: Sending data to {config.topic_name}"
+        f" via {publish_method}..."
+    )
     click.echo(f"Querying redis at {backpack_dispatcher.redis.address}")
 
-    result, records = backpack_dispatcher.post()
+    result, records = backpack_dispatcher.publish(method=publish_method)
+
+    click.echo(f"Connected to kafka at {os.getenv('KAFKA_BOOTSTRAP_SERVERS')}")
 
     if "Error" in result:
         click.secho(result, fg="red")

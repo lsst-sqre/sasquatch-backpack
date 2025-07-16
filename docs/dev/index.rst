@@ -10,6 +10,7 @@ Learn how to contribute to the sasquatch-backpack open source project.
    :caption: Guides
 
    add_datasources
+   publish_methods
    redis
    development
    release

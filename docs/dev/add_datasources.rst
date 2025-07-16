@@ -78,6 +78,11 @@ Use this as an opportunity to debug your commands so they work as intended befor
 
 Add Schemas
 ===========
+
+.. warning ::
+
+    Sasquatch-backpack version 0.4.0 does not support non-json schemas in its default publishing method. Support is planned, but in the meantime either opt to use the old publish method (PublishMethod.REST_API), or serialize any schema data to json before publishing.
+
 `Sasquatch <https://sasquatch.lsst.io>`__ (the wearer of the proverbial backpack), uses `Avro schemas <https://sasquatch.lsst.io/user-guide/avro.html>`__ for data serialization.
 Navigate to your Datasource's folder and create a ``schemas.py`` file for your Datasource.
 Inside, use `pydantic's AvroBaseModel <https://marcosschroh.github.io/dataclasses-avroschema/pydantic/>`__ to create an avro schema.
@@ -100,7 +105,7 @@ Below is a quick sample of usage.
             """Schema metadata."""
 
             namespace = "$namespace"
-            schema_name = "$topic_name"
+            schema_name = "topic_name_goes_here"
 
 Make one such schema for each command or API call you wish to make.
 Each schema should reflect the data each of its objects will send to sasquatch.
@@ -123,7 +128,8 @@ While not required, giving each entry a unique ID is strongly reccommended to id
 Note 3: Meta
 ------------
 The Meta subclass is required, and must contain both namespace and schema_name values.
-These will be replaced with their actual values later on when the file is parsed, so simply keep their values as shown above, in "$thing" format.
+The namespace will be replaced with its actual value later on when the file is parsed, so simply keep its value as shown above, in "$thing" format.
+The schema_name, on the other hand, should be hardcoded in.
 
 Add Configs
 ===========
@@ -183,36 +189,36 @@ Otherwise, feel free to initialize your parameters freely.
 
 Update CLI
 ==========
-You'll want to add a post option to your CLI command, to allow users to specify whether or not the command should go ahead and send a post request to kafka with the provided data or not.
+You'll want to add a publish option to your CLI command, to allow users to specify whether or not the command should go ahead and send a publish request to kafka with the provided data or not.
 To do so, add the following to your CLI command
 
 .. code-block:: python
 
     @click.option(
-        "--post",
+        "--publish",
         is_flag=True,
         default=False,
         help=(
             "Allows the user to specify that the command output"
-            "should be posted to kafka"
+            "should be published to kafka"
         ),
     )
 
 
-Remember to also add ``post: bool,  # noqa: FBT001`` as a parameter.
-You can add the funciton of the post flag after the body of the extant function with the following:
+Remember to also add ``publish: bool,  # noqa: FBT001`` as a parameter.
+You can add the funciton of the publish flag after the body of the extant function with the following:
 
 .. code-block:: python
 
     click.echo(
-        f"Querying USGS with post mode {'enabled' if post else 'disabled'}..."
+        f"Querying USGS with publish mode {'enabled' if publish else 'disabled'}..."
     )
     #Query
-    if not post:
-        click.echo("Post mode is disabled: No data will be sent to Kafka.")
+    if not publish:
+        click.echo("Publish mode is disabled: No data will be sent to Kafka.")
         return
 
-    click.echo("Post mode enabled: Sending data...")
+    click.echo("Publish mode enabled: Sending data...")
 
 To actually send the data, simply import and instantiate the config and source objects you made in your ``scripts.py`` file.
 Then, import ``sasquatchbackpack.sasquatch`` and add the following:
@@ -227,7 +233,7 @@ Then, import ``sasquatchbackpack.sasquatch`` and add the following:
         source
     )
 
-    result, records = backpack_dispatcher.post()
+    result, records = backpack_dispatcher.publish()
 
     if "Error" in result:
         click.secho(result, fg="red")
@@ -236,11 +242,11 @@ Then, import ``sasquatchbackpack.sasquatch`` and add the following:
     else:
         click.secho("Data successfully sent!", fg="green")
 
-The records returned from the post command are the ones that the command sent.
+The records returned from the publish command are the ones that the command sent.
 They're very helpful for giving user feedback in the CLI!
 
 Test it!
 ========
-Running the CLI command should now result in the data being posted to sasquatch!
+Running the CLI command should now result in the data being published to sasquatch!
 Specifically you can search `kafdrop on data-int <https://data-int.lsst.cloud/kafdrop/>`_
 for the ``lsst.backpack`` topic, and your data should show up there.

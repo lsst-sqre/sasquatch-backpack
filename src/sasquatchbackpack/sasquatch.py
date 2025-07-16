@@ -1,21 +1,30 @@
 """Handles dispatch of backpack data to kafka."""
 
-__all__ = ["BackpackDispatcher", "DataSource", "DispatcherConfig"]
+__all__ = [
+    "BackpackDispatcher",
+    "DataSource",
+    "DispatcherConfig",
+    "PublishMethod",
+]
 
 import asyncio
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from enum import StrEnum
 from string import Template
 
+import nest_asyncio
 import redis.asyncio as redis
 import requests
+from faststream import FastStream
+from faststream.kafka import KafkaBroker
+from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
+from pydantic import ValidationError
+from safir.kafka import KafkaConnectionSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
-
-# ruff: noqa:TD002
-# ruff: noqa:TD003
 
 
 class DataSource(ABC):
@@ -56,8 +65,6 @@ class RedisManager:
         self.address = address
         self.model = redis.from_url(self.address)
 
-        self.loop = asyncio.new_event_loop()
-
     def store(self, key: str, item: str = "value") -> None:
         """Store a key value pair in the provided redis server.
 
@@ -68,7 +75,7 @@ class RedisManager:
         item : str
             Value that will be stored. Defaults to "value".
         """
-        self.loop.run_until_complete(self.model.set(key, item))
+        asyncio.run(self.model.set(key, item))
 
     def get(self, key: str) -> str | None:
         """Query a key from the provided redis server and return its value.
@@ -83,7 +90,7 @@ class RedisManager:
         str
             Queried value. Returns None if value is not found.
         """
-        return self.loop.run_until_complete(self.model.get(key))
+        return asyncio.run(self.model.get(key))
 
 
 @dataclass
@@ -113,6 +120,56 @@ class DispatcherConfig:
     """Address of Redis server"""
 
 
+class PublishMethod(StrEnum):
+    """Avenues through which data can be sent to kafka."""
+
+    NONE = "NONE"
+    DIRECT_CONNECTION = "DIRECT_CONNECTION"
+    REST_API = "REST_API"
+
+
+# Handle kafka direct connection
+try:
+    kafka_config = KafkaConnectionSettings()
+    kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+    app = FastStream(kafka_broker)
+except ValidationError:
+    pass
+
+
+async def _dispatch(
+    records: list[dict],
+    broker: KafkaBroker,
+    publisher: AsyncAPIDefaultPublisher,
+) -> Exception | None:
+    """Connect to a kafka server and publish records.
+
+    Parameters
+    ----------
+    records: list[dict]
+        Output of a source.get_records() call.
+    broker: faststream.kafka.KafkaBroker
+        faststream broker configured for the kafka connection
+    publisher: AsyncAPIDefaultPublisher
+        Preconfigured publisher containing the destination kafka-topic
+
+    Return
+    ------
+    Exception | None
+        Returns an exception if the connection failed.
+    """
+    try:
+        await broker.connect()
+    except Exception as e:
+        return e
+
+    await publisher.publish(
+        records,
+        headers={"content-type": "application/json"},
+    )
+    return None
+
+
 class BackpackDispatcher:
     """A class to send backpack data to kafka.
 
@@ -120,14 +177,20 @@ class BackpackDispatcher:
     ----------
     source : DataSource
         DataSource containing schema and record data to be
-        posted to remote
-    config : DispatcherConfig
-        Item that transmits other relevant information to
-        the Dispatcher
+        published to remote
+    redis_address : str
+        Location to look for a redis server. Will look for one if left empty,
+        used for testing.
+    broker_in: faststream.kafka.KafkaBroker
+        Reference to a preconfigured broker. Will create one if left empty,
+        used for testing.
     """
 
     def __init__(
-        self, source: DataSource, redis_address: str = "default"
+        self,
+        source: DataSource,
+        redis_address: str = "default",
+        broker_in: KafkaBroker | None = None,
     ) -> None:
         self.source = source
         self.config = DispatcherConfig()
@@ -136,11 +199,20 @@ class BackpackDispatcher:
                 "namespace": self.config.namespace,
             }
         )
+        nest_asyncio.apply()
         self.redis = RedisManager(
             self.config.redis_address
             if redis_address == "default"
             else redis_address
         )
+
+        try:
+            local_broker = kafka_broker
+            self.broker = broker_in if broker_in is not None else local_broker
+        except NameError:
+            if broker_in is None:
+                raise ValueError from None
+            self.broker = broker_in
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -201,7 +273,7 @@ class BackpackDispatcher:
             List with duplicate elements in common with those
             on the redis server removed.
         """
-        records = self.source.get_records()
+        records: list[dict] = self.source.get_records()
 
         if len(records) == 0:
             return None
@@ -215,32 +287,97 @@ class BackpackDispatcher:
             if self.redis.get(self.source.get_redis_key(record)) is None
         ]
 
-    def post(self) -> tuple[str, list]:
-        """Assemble schema and payload from the given source, then
-        makes a POST request to kafka.
+    def publish(
+        self, *, method: PublishMethod = PublishMethod.DIRECT_CONNECTION
+    ) -> tuple[str, list]:
+        """Assemble a schema and payload from the given source,
+        and route data directly to kafka.
 
         Returns
         -------
-        response-text : str
-            The results of the POST request in string format
-        records : list
-            List of earthquakes with those already stored on remote removed
+        response: str
+            Status message for the operation.
+        records: list
+            List of entries with those already stored on remote removed
         """
         records = self._get_source_records()
 
         if records is None:
             return (
-                "Warning: No entries found, aborting POST request",
+                "Warning: No entries found, aborting publish",
                 [],
             )
 
         if len(records) == 0:
             return (
-                "Warning: All entries already present, aborting POST request",
+                "Warning: All entries already present, aborting publish",
                 records,
             )
 
-        payload = {"value_schema": self.schema, "records": records}
+        response = None
+        match method:
+            case PublishMethod.DIRECT_CONNECTION:
+                response = self._direct_connect(records)
+            case PublishMethod.REST_API:
+                response = self._rest_api_post(records)
+
+        if response is None:
+            return (
+                f"Error: No publisher found for {method}"
+                "please specify a valid PublishMethod",
+                records,
+            )
+
+        # Adds items to redis if the source uses redis
+        # and the call has not failed
+        if self.source.uses_redis and "Error" not in response:
+            for record in records:
+                self.redis.store(self.source.get_redis_key(record))
+
+        return response, records
+
+    def _direct_connect(self, processed_records: list[dict]) -> str:
+        """Assemble a schema and payload from the given source,
+        and route data directly to kafka.
+
+        Parameters
+        ----------
+        processed_records: list[dict]
+            List of entries with those already stored on remote removed
+
+        Returns
+        -------
+        str
+            Status message for the operation.
+        """
+        prepared_publisher = self.broker.publisher(
+            f"{self.config.namespace}.{self.source.topic_name}"
+        )
+
+        result: Exception | None = asyncio.run(
+            _dispatch(processed_records, self.broker, prepared_publisher)
+        )
+
+        if result is not None:
+            return f"Connection Error :( Check kafka auth secrets.\n{result}"
+
+        return "Data sent successfully :D"
+
+    def _rest_api_post(self, processed_records: list[dict]) -> str:
+        """Assemble schema and payload from the given source, then
+        makes a POST request to kafka.
+
+        Parameters
+        ----------
+        processed_records: list[dict]
+            List of entries with those already stored on remote removed
+
+        Returns
+        -------
+        response-text : str
+            The results of the POST request in string format
+        """
+        payload = {"value_schema": self.schema, "records": processed_records}
 
         url = (
             f"{self.config.sasquatch_rest_proxy_url}/topics/"
@@ -263,10 +400,6 @@ class BackpackDispatcher:
             response.raise_for_status()  # Raises HTTPError for bad responses
 
         except requests.RequestException as e:
-            return f"Error POSTing data: {e}", records
+            return f"Error POSTing data: {e}"
 
-        if self.source.uses_redis:
-            for record in records:
-                self.redis.store(self.source.get_redis_key(record))
-
-        return response.text, records
+        return response.text

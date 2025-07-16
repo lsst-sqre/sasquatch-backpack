@@ -7,13 +7,21 @@ from sasquatchbackpack.sources.usgs import commands as usgs
 
 
 @pytest.mark.parametrize(
-    ("duration", "radius", "coords", "magnitude_bounds", "expected"),
+    (
+        "duration",
+        "radius",
+        "coords",
+        "magnitude_bounds",
+        "publish_mode",
+        "expected",
+    ),
     [
         (
             (50, 0),
             400,
             (-30.22573200864174, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["SUCCESS"],
         ),  # Common usage
         (
@@ -21,6 +29,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             400,
             (-30.22573200864174, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["duration", "large"],
         ),
         (
@@ -28,6 +37,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             400,
             (-30.22573200864174, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["duration", "small"],
         ),
         (
@@ -35,6 +45,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             5001,
             (-30.22573200864174, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["radius", "large"],
         ),
         (
@@ -42,6 +53,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             0,
             (-30.22573200864174, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["radius", "small"],
         ),
         (
@@ -49,6 +61,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             400,
             (-91, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["latitude", "out of bounds"],
         ),
         (
@@ -56,6 +69,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             400,
             (91, -70.73932987127506),
             (2, 10),
+            "NONE",
             ["latitude", "out of bounds"],
         ),
         (
@@ -63,6 +77,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             400,
             (-30.22573200864174, -181),
             (2, 10),
+            "NONE",
             ["longitude", "out of bounds"],
         ),
         (
@@ -70,6 +85,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             400,
             (-30.22573200864174, 181),
             (2, 10),
+            "NONE",
             ["longitude", "out of bounds"],
         ),
         (
@@ -77,6 +93,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             100,
             (-30.22573200864174, -70.73932987127506),
             (-1, 10),
+            "NONE",
             ["minimum magnitude", "out of bounds"],
         ),
         (
@@ -84,6 +101,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             100,
             (-30.22573200864174, -70.73932987127506),
             (11, 10),
+            "NONE",
             ["minimum magnitude", "out of bounds"],
         ),
         (
@@ -91,6 +109,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             100,
             (-30.22573200864174, -70.73932987127506),
             (2, -1),
+            "NONE",
             ["maximum magnitude", "out of bounds"],
         ),
         (
@@ -98,6 +117,7 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             100,
             (-30.22573200864174, -70.73932987127506),
             (2, 11),
+            "NONE",
             ["maximum magnitude", "out of bounds"],
         ),
         (
@@ -105,10 +125,22 @@ from sasquatchbackpack.sources.usgs import commands as usgs
             100,
             (-30.22573200864174, -70.73932987127506),
             (10, 2),
+            "NONE",
             [
                 "minimum magnitude",
                 "cannot excede",
                 "maximum magnitude",
+            ],
+        ),
+        (
+            (50, 0),
+            100,
+            (-30.22573200864174, -70.73932987127506),
+            (2, 10),
+            "INVALID",
+            [
+                "did not match",
+                "publish method",
             ],
         ),
     ],
@@ -118,6 +150,7 @@ def test_usgs_earthquake_data(
     radius: int,
     coords: tuple[float, float],
     magnitude_bounds: tuple[int, int],
+    publish_mode: str,
     expected: list[str],
 ) -> None:
     """Ensure fringe user input functions as intended."""
@@ -137,6 +170,8 @@ def test_usgs_earthquake_data(
             "-m",
             str(magnitude_bounds[0]),
             str(magnitude_bounds[1]),
+            "-pm",
+            publish_mode,
         ],
         input="N",
     )
