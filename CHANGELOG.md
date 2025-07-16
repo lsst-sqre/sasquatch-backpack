@@ -6,6 +6,17 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-0.4.0'></a>
+## 0.4.0 (2025-07-16)
+
+### New features
+
+- Backpack can now directly connect to kafka
+
+### Other changes
+
+- the --post flag on the usgs_earthquake_data command has been deprecated in favor of --publish. It will be removed in a future version.
+
 <a id='changelog-0.3.2'></a>
 ## 0.3.2 (2025-04-15)
 
