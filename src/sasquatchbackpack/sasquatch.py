@@ -17,11 +17,12 @@ from string import Template
 import nest_asyncio
 import redis.asyncio as redis
 import requests
+from dataclasses_avroschema.pydantic import AvroBaseModel
 from faststream import FastStream
 from faststream.kafka import KafkaBroker
 from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
 from pydantic import ValidationError
-from safir.kafka import KafkaConnectionSettings
+from safir.kafka import KafkaConnectionSettings, SchemaManagerSettings
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
@@ -132,6 +133,8 @@ class PublishMethod(StrEnum):
 try:
     kafka_config = KafkaConnectionSettings()
     kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+    schema_config = SchemaManagerSettings()
+    schema_manager = schema_config.make_manager()
     app = FastStream(kafka_broker)
 except ValidationError:
     pass
@@ -139,8 +142,11 @@ except ValidationError:
 
 async def _dispatch(
     records: list[dict],
+    schema: AvroBaseModel,
     broker: KafkaBroker,
     publisher: AsyncAPIDefaultPublisher,
+    source: DataSource,
+    namespace: str,
 ) -> Exception | None:
     """Connect to a kafka server and publish records.
 
@@ -163,10 +169,14 @@ async def _dispatch(
     except Exception as e:
         return e
 
-    await publisher.publish(
-        records,
-        headers={"content-type": "application/json"},
-    )
+    await schema_manager.register(schema)
+
+    for record in records:
+        avro: bytes = schema_manager.serialize(
+            source.assemble_schema(record, namespace)
+        )
+
+        await publisher.publish(avro)
     return None
 
 
@@ -355,7 +365,9 @@ class BackpackDispatcher:
         )
 
         result: Exception | None = asyncio.run(
-            _dispatch(processed_records, self.broker, prepared_publisher)
+            _dispatch(
+                processed_records, self.schema, self.broker, prepared_publisher
+            )
         )
 
         if result is not None:
