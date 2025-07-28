@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from string import Template
 
 from libcomcat.search import search
 
@@ -143,6 +144,24 @@ class USGSSource(DataSource):
             raise ConnectionError(
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
+
+    def assemble_schema(
+        self, record: dict, namespace: str
+    ) -> EarthquakeSchema.avro_schema():
+        return Template(
+            EarthquakeSchema(
+                timestamp=record["timestamp"],
+                id=record["id"],
+                latitude=record["latitude"],
+                longitude=record["longitude"],
+                depth=record["depth"],
+                magnitude=record["magnitude"],
+            )
+        ).substitute(
+            {
+                "namespace": namespace,
+            }
+        )
 
     def get_redis_key(self, datapoint: dict) -> str:
         """Allow USGS API to format its own redis keys.
