@@ -12,7 +12,6 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import StrEnum
-from string import Template
 
 import nest_asyncio
 import redis.asyncio as redis
@@ -22,7 +21,11 @@ from faststream import FastStream
 from faststream.kafka import KafkaBroker
 from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
 from pydantic import ValidationError
-from safir.kafka import KafkaConnectionSettings, SchemaManagerSettings
+from safir.kafka import (
+    KafkaConnectionSettings,
+    PydanticSchemaManager,
+    SchemaManagerSettings,
+)
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
@@ -134,7 +137,7 @@ try:
     kafka_config = KafkaConnectionSettings()
     kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
     schema_config = SchemaManagerSettings()
-    schema_manager = schema_config.make_manager()
+    manager = schema_config.make_manager()
     app = FastStream(kafka_broker)
 except ValidationError:
     pass
@@ -144,6 +147,7 @@ async def _dispatch(
     records: list[dict],
     schema: AvroBaseModel,
     broker: KafkaBroker,
+    schema_manager: PydanticSchemaManager,
     publisher: AsyncAPIDefaultPublisher,
     source: DataSource,
     namespace: str,
@@ -169,7 +173,7 @@ async def _dispatch(
     except Exception as e:
         return e
 
-    await schema_manager.register(schema)
+    await schema_manager.register_model(schema)
 
     for record in records:
         avro: bytes = schema_manager.serialize(
@@ -201,14 +205,12 @@ class BackpackDispatcher:
         source: DataSource,
         redis_address: str = "default",
         broker_in: KafkaBroker | None = None,
+        manager_in: PydanticSchemaManager | None = None,
     ) -> None:
         self.source = source
         self.config = DispatcherConfig()
-        self.schema = Template(source.schema).substitute(
-            {
-                "namespace": self.config.namespace,
-            }
-        )
+
+        self.schema = self.source.get_schema(self.config.namespace)
         nest_asyncio.apply()
         self.redis = RedisManager(
             self.config.redis_address
@@ -223,6 +225,16 @@ class BackpackDispatcher:
             if broker_in is None:
                 raise ValueError from None
             self.broker = broker_in
+
+        try:
+            local_schema_manager = manager
+            self.manager = (
+                manager_in if manager_in is not None else local_schema_manager
+            )
+        except NameError:
+            if manager_in is None:
+                raise ValueError from None
+            self.manager = manager_in
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -366,7 +378,13 @@ class BackpackDispatcher:
 
         result: Exception | None = asyncio.run(
             _dispatch(
-                processed_records, self.schema, self.broker, prepared_publisher
+                processed_records,
+                self.schema,
+                self.broker,
+                self.manager,
+                prepared_publisher,
+                self.source,
+                self.config.namespace,
             )
         )
 

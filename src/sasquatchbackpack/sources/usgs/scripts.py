@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from string import Template
 
 from libcomcat.search import search
 
@@ -148,20 +147,22 @@ class USGSSource(DataSource):
     def assemble_schema(
         self, record: dict, namespace: str
     ) -> EarthquakeSchema.avro_schema():
-        return Template(
-            EarthquakeSchema(
-                timestamp=record["timestamp"],
-                id=record["id"],
-                latitude=record["latitude"],
-                longitude=record["longitude"],
-                depth=record["depth"],
-                magnitude=record["magnitude"],
-            )
-        ).substitute(
-            {
-                "namespace": namespace,
-            }
-        )
+        schema = {
+            "timestamp": record["timestamp"],
+            "id": record["id"],
+            "latitude": record["latitude"],
+            "longitude": record["longitude"],
+            "depth": record["depth"],
+            "magnitude": record["magnitude"],
+            "namespace": namespace,
+        }
+        return EarthquakeSchema(**schema)
+
+    def get_schema(self, namespace: str) -> EarthquakeSchema.avro_schema():
+        schema = {
+            "namespace": namespace,
+        }
+        return EarthquakeSchema(**schema)
 
     def get_redis_key(self, datapoint: dict) -> str:
         """Allow USGS API to format its own redis keys.

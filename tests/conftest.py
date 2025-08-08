@@ -7,8 +7,17 @@ import pytest_asyncio
 from aiokafka import AIOKafkaConsumer
 from aiokafka.admin.client import AIOKafkaAdminClient
 from faststream.kafka import KafkaBroker
-from safir.kafka import KafkaConnectionSettings, SecurityProtocol
-from safir.testing.containers import FullKafkaContainer
+from pydantic import AnyUrl
+from safir.kafka import (
+    KafkaConnectionSettings,
+    PydanticSchemaManager,
+    SchemaManagerSettings,
+    SecurityProtocol,
+)
+from safir.testing.containers import (
+    FullKafkaContainer,
+    SchemaRegistryContainer,
+)
 from testcontainers.core.network import Network
 
 
@@ -45,6 +54,42 @@ def kafka_connection_settings(
         bootstrap_servers=kafka_container.get_bootstrap_server(),
         security_protocol=SecurityProtocol.PLAINTEXT,
     )
+
+
+@pytest.fixture
+def schema_manager_settings(
+    schema_registry_container: SchemaRegistryContainer,
+) -> SchemaManagerSettings:
+    return SchemaManagerSettings(
+        registry_url=AnyUrl(schema_registry_container.get_url())
+    )
+
+
+@pytest.fixture
+def schema_manager(
+    schema_manager_settings: SchemaManagerSettings,
+) -> PydanticSchemaManager:
+    return schema_manager_settings.make_manager()
+
+
+@pytest.fixture(scope="session")
+def global_schema_registry_container(
+    global_kafka_container: FullKafkaContainer,
+    kafka_docker_network: Network,
+) -> Iterator[SchemaRegistryContainer]:
+    container = SchemaRegistryContainer(network=kafka_docker_network)
+    container.with_network(kafka_docker_network)
+    container.with_network_aliases("schemaregistry")
+    with container as schema_registry:
+        yield schema_registry
+
+
+@pytest.fixture
+def schema_registry_container(
+    global_schema_registry_container: SchemaRegistryContainer,
+) -> Iterator[SchemaRegistryContainer]:
+    global_schema_registry_container.reset()
+    return global_schema_registry_container
 
 
 @pytest_asyncio.fixture
