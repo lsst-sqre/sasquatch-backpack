@@ -144,6 +144,26 @@ class USGSSource(DataSource):
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
 
+    def assemble_schema(
+        self, record: dict, namespace: str
+    ) -> EarthquakeSchema.avro_schema():
+        schema = {
+            "timestamp": record["timestamp"],
+            "id": record["id"],
+            "latitude": record["latitude"],
+            "longitude": record["longitude"],
+            "depth": record["depth"],
+            "magnitude": record["magnitude"],
+            "namespace": namespace,
+        }
+        return EarthquakeSchema(**schema)
+
+    def get_schema(self, namespace: str) -> EarthquakeSchema.avro_schema():
+        schema = {
+            "namespace": namespace,
+        }
+        return EarthquakeSchema(**schema)
+
     def get_redis_key(self, datapoint: dict) -> str:
         """Allow USGS API to format its own redis keys.
         For usage in the BackpackDispatcher.
