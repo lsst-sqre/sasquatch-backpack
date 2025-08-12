@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
+from dataclasses_avroschema.pydantic import AvroBaseModel
 from libcomcat.search import search
 
 from sasquatchbackpack.sasquatch import DataSource
@@ -99,9 +100,7 @@ class USGSSource(DataSource):
         self,
         config: USGSConfig,
     ) -> None:
-        super().__init__(
-            config.topic_name, config.schema, uses_redis=config.uses_redis
-        )
+        super().__init__(config.topic_name, uses_redis=config.uses_redis)
         self.duration = config.duration
         self.config = config
         self.radius = config.radius
@@ -144,9 +143,7 @@ class USGSSource(DataSource):
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
 
-    def assemble_schema(
-        self, record: dict, namespace: str
-    ) -> EarthquakeSchema.avro_schema():
+    def assemble_schema(self, record: dict, namespace: str) -> AvroBaseModel:
         schema = {
             "timestamp": record["timestamp"],
             "id": record["id"],
@@ -156,13 +153,19 @@ class USGSSource(DataSource):
             "magnitude": record["magnitude"],
             "namespace": namespace,
         }
-        return EarthquakeSchema(**schema)
+        return EarthquakeSchema.parse_obj(data=schema)
 
-    def get_schema(self, namespace: str) -> EarthquakeSchema.avro_schema():
+    def get_schema(self, namespace: str) -> AvroBaseModel:
         schema = {
+            "timestamp": 1,
+            "id": "default",
+            "latitude": 1.0,
+            "longitude": 1.0,
+            "depth": 1.0,
+            "magnitude": 1.0,
             "namespace": namespace,
         }
-        return EarthquakeSchema(**schema)
+        return EarthquakeSchema.parse_obj(data=schema)
 
     def get_redis_key(self, datapoint: dict) -> str:
         """Allow USGS API to format its own redis keys.

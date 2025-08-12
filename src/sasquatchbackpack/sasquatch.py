@@ -40,12 +40,17 @@ class DataSource(ABC):
         Specific source name, used as an identifier
     """
 
-    def __init__(
-        self, topic_name: str, schema: str, *, uses_redis: bool
-    ) -> None:
+    def __init__(self, topic_name: str, *, uses_redis: bool) -> None:
         self.topic_name = topic_name
-        self.schema = schema
         self.uses_redis = uses_redis
+
+    @abstractmethod
+    def get_schema(self, namespace: str) -> AvroBaseModel:
+        pass
+
+    @abstractmethod
+    def assemble_schema(self, records: dict, namespace: str) -> AvroBaseModel:
+        pass
 
     @abstractmethod
     def get_records(self) -> list[dict]:
@@ -66,6 +71,7 @@ class RedisManager:
     """
 
     def __init__(self, address: str) -> None:
+        nest_asyncio.apply()
         self.address = address
         self.model = redis.from_url(self.address)
 
@@ -173,10 +179,10 @@ async def _dispatch(
     except Exception as e:
         return e
 
-    await schema_manager.register_model(schema)
+    await schema_manager.register_model(type(schema))
 
     for record in records:
-        avro: bytes = schema_manager.serialize(
+        avro: bytes = await schema_manager.serialize(
             source.assemble_schema(record, namespace)
         )
 

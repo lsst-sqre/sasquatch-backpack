@@ -18,7 +18,7 @@ class TestSchema(AvroBaseModel):
     class Meta:
         """Schema metadata."""
 
-        namespace = "$namespace"
+        namespace = "Default"
         schema_name = "testSchema"
 
 
@@ -26,10 +26,23 @@ class TestSource(sasquatch.DataSource):
     def __init__(self, current_records: list[dict[str, str]]) -> None:
         super().__init__(
             "test",
-            TestSchema.avro_schema().replace("double", "float"),
             uses_redis=True,
         )
         self.records = current_records
+
+    def assemble_schema(self, record: dict, namespace: str) -> AvroBaseModel:
+        schema = {
+            "id": record["value"]["id"],
+            "namespace": namespace,
+        }
+        return TestSchema.parse_obj(data=schema)
+
+    def get_schema(self, namespace: str) -> AvroBaseModel:
+        schema = {
+            "id": "default",
+            "namespace": namespace,
+        }
+        return TestSchema.parse_obj(data=schema)
 
     def get_records(self) -> list[dict]:
         return [{"value": {"id": record["id"]}} for record in self.records]
