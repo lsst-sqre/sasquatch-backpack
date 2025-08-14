@@ -32,7 +32,7 @@ class TestSource(sasquatch.DataSource):
 
     def assemble_schema(self, record: dict, namespace: str) -> AvroBaseModel:
         schema = {
-            "id": record["value"]["id"],
+            "id": record["id"],
             "namespace": namespace,
         }
         return TestSchema.parse_obj(data=schema)

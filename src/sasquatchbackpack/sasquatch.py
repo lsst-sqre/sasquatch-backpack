@@ -24,6 +24,7 @@ from pydantic import ValidationError
 from safir.kafka import (
     KafkaConnectionSettings,
     PydanticSchemaManager,
+    SchemaInfo,
     SchemaManagerSettings,
 )
 
@@ -179,14 +180,17 @@ async def _dispatch(
     except Exception as e:
         return e
 
-    await schema_manager.register_model(type(schema))
+    info: SchemaInfo = await schema_manager.register_model(type(schema))
 
     for record in records:
         avro: bytes = await schema_manager.serialize(
-            source.assemble_schema(record, namespace)
+            source.assemble_schema(record["value"], namespace)
         )
-
-        await publisher.publish(avro)
+        headers = {
+            "content-type": "avro",
+            "schema-id": str(info.schema_id),
+        }
+        await publisher.publish(avro, headers=headers)
     return None
 
 
@@ -229,7 +233,7 @@ class BackpackDispatcher:
             self.broker = broker_in if broker_in is not None else local_broker
         except NameError:
             if broker_in is None:
-                raise ValueError from None
+                raise ValueError("Kafka environment variables unset") from None
             self.broker = broker_in
 
         try:
@@ -239,7 +243,7 @@ class BackpackDispatcher:
             )
         except NameError:
             if manager_in is None:
-                raise ValueError from None
+                raise ValueError("Schema environment variable unset") from None
             self.manager = manager_in
 
     def create_topic(self) -> str:
