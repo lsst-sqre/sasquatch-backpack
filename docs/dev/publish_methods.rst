@@ -13,10 +13,6 @@ Direct Connection
 
 PublishMethod.DIRECT_CONNECTION is the current default option. With sasquatch and backpack running on the same clusters, it just makes sense to directly connect in. This runs up a connection to sasquatch when publish is called, and sends published data through that tunnel.
 
-.. warning ::
-
-    Sasquatch-backpack version 0.4.0 does not support non-json schemas in its default publishing method. Support is planned, but in the meantime either opt to use the old publish method (PublishMethod.REST_API), or serialize any schema data to json before publishing.
-
 REST_API
 ========
 

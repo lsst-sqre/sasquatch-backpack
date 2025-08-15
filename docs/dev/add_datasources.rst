@@ -79,10 +79,6 @@ Use this as an opportunity to debug your commands so they work as intended befor
 Add Schemas
 ===========
 
-.. warning ::
-
-    Sasquatch-backpack version 0.4.0 does not support non-json schemas in its default publishing method. Support is planned, but in the meantime either opt to use the old publish method (PublishMethod.REST_API), or serialize any schema data to json before publishing.
-
 `Sasquatch <https://sasquatch.lsst.io>`__ (the wearer of the proverbial backpack), uses `Avro schemas <https://sasquatch.lsst.io/user-guide/avro.html>`__ for data serialization.
 Navigate to your Datasource's folder and create a ``schemas.py`` file for your Datasource.
 Inside, use `pydantic's AvroBaseModel <https://marcosschroh.github.io/dataclasses-avroschema/pydantic/>`__ to create an avro schema.

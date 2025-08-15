@@ -6,6 +6,13 @@ Find changes for the upcoming release in the project's [changelog.d directory](h
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-0.4.1'></a>
+## 0.4.1 (2025-08-15)
+
+### New features
+
+- Readded support for avro schemas via direct connection
+
 <a id='changelog-0.4.0'></a>
 ## 0.4.0 (2025-07-16)
 
