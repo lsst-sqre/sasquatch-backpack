@@ -9,7 +9,17 @@ package = "sasquatchbackpack"
 rst_epilog_file = "_rst_epilog.rst"
 disable_primary_sidebars = ["index", "changelog"]
 extensions = ['sphinx_click']
-nitpick_ignore = [["py:class", "faststream.kafka.KafkaBroker"]]
+nitpick_ignore = [
+	[
+		"py:class",
+		"faststream.kafka.KafkaBroker",
+	],
+	[
+		"py:class",
+		"dataclasses_avroschema.pydantic.main.AvroBaseModel",
+	],
+]
 
 [sphinx.intersphinx.projects]
+safir = "https://safir.lsst.io"
 python = "https://docs.python.org/3/"
