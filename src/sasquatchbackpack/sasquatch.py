@@ -46,11 +46,7 @@ class DataSource(ABC):
         self.uses_redis = uses_redis
 
     @abstractmethod
-    def get_schema(self, namespace: str) -> AvroBaseModel:
-        pass
-
-    @abstractmethod
-    def assemble_schema(self, records: dict, namespace: str) -> AvroBaseModel:
+    def assemble_schema(self, namespace: str, records: dict) -> AvroBaseModel:
         pass
 
     @abstractmethod
@@ -184,7 +180,7 @@ async def _dispatch(
 
     for record in records:
         avro: bytes = await schema_manager.serialize(
-            source.assemble_schema(record["value"], namespace)
+            source.assemble_schema(namespace, record["value"])
         )
         headers = {
             "content-type": "avro",
@@ -220,7 +216,7 @@ class BackpackDispatcher:
         self.source = source
         self.config = DispatcherConfig()
 
-        self.schema = self.source.get_schema(self.config.namespace)
+        self.schema = self.source.assemble_schema(self.config.namespace)
         nest_asyncio.apply()
         self.redis = RedisManager(
             self.config.redis_address

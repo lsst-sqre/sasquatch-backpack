@@ -143,28 +143,29 @@ class USGSSource(DataSource):
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
 
-    def assemble_schema(self, record: dict, namespace: str) -> AvroBaseModel:
-        schema = {
-            "timestamp": record["timestamp"],
-            "id": record["id"],
-            "latitude": record["latitude"],
-            "longitude": record["longitude"],
-            "depth": record["depth"],
-            "magnitude": record["magnitude"],
-            "namespace": namespace,
-        }
-        return EarthquakeSchema.parse_obj(data=schema)
-
-    def get_schema(self, namespace: str) -> AvroBaseModel:
-        schema = {
-            "timestamp": 1,
-            "id": "default",
-            "latitude": 1.0,
-            "longitude": 1.0,
-            "depth": 1.0,
-            "magnitude": 1.0,
-            "namespace": namespace,
-        }
+    def assemble_schema(
+        self, namespace: str, record: dict = dict()
+    ) -> AvroBaseModel:
+        if record == {}:
+            schema = {
+                "timestamp": 1,
+                "id": "default",
+                "latitude": 1.0,
+                "longitude": 1.0,
+                "depth": 1.0,
+                "magnitude": 1.0,
+                "namespace": namespace,
+            }
+        else:
+            schema = {
+                "timestamp": record["timestamp"],
+                "id": record["id"],
+                "latitude": record["latitude"],
+                "longitude": record["longitude"],
+                "depth": record["depth"],
+                "magnitude": record["magnitude"],
+                "namespace": namespace,
+            }
         return EarthquakeSchema.parse_obj(data=schema)
 
     def get_redis_key(self, datapoint: dict) -> str:

@@ -30,18 +30,19 @@ class TestSource(sasquatch.DataSource):
         )
         self.records = current_records
 
-    def assemble_schema(self, record: dict, namespace: str) -> AvroBaseModel:
-        schema = {
-            "id": record["id"],
-            "namespace": namespace,
-        }
-        return TestSchema.parse_obj(data=schema)
-
-    def get_schema(self, namespace: str) -> AvroBaseModel:
-        schema = {
-            "id": "default",
-            "namespace": namespace,
-        }
+    def assemble_schema(
+        self, namespace: str, record: dict = {}
+    ) -> AvroBaseModel:
+        if record == {}:
+            schema = {
+                "id": "default",
+                "namespace": namespace,
+            }
+        else:
+            schema = {
+                "id": record["id"],
+                "namespace": namespace,
+            }
         return TestSchema.parse_obj(data=schema)
 
     def get_records(self) -> list[dict]:
