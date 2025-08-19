@@ -420,7 +420,7 @@ dacite==1.9.2 \
     --hash=sha256:053f7c3f5128ca2e9aceb66892b1a3c8936d02c686e707bee96e19deef4bc4a0 \
     --hash=sha256:6ccc3b299727c7aa17582f0021f6ae14d5de47c7227932c47fec4cdfefd26f09
     # via dataclasses-avroschema
-dataclasses-avroschema==0.65.12 \
+dataclasses-avroschema[pydantic]==0.65.12 \
     --hash=sha256:4a95e9cd02b627a4f33b0d19e71aec2fe7af6958d475830f31e1ad2de4ed4eea \
     --hash=sha256:4f663ff0c92cb584f6e87f1aa7db22fad6127f7ffe7e806bae39cf36d938e005
     # via
@@ -1078,23 +1078,23 @@ numpy==2.3.2 \
     #   scipy
     #   shapely
     #   usgs-libcomcat
-obspy==1.4.1 \
-    --hash=sha256:05256048d3df93936992370fdd6f1d6c1e55fbb52604e47481a42a0dde1d77c0 \
-    --hash=sha256:09e0faecb206231d7395e975371ac66f00d564e2fea3e957274181b8d1c06548 \
-    --hash=sha256:20fcbeb061d03f17b73235518f3372f400058245fe9a7ecfa325eb166d263076 \
-    --hash=sha256:2275962307055bfd0d6c875b12edb810a731f9ea4943e0c9d4c2eb26d45ada39 \
-    --hash=sha256:2355082a07b2539005364e12fe6a3ed030c7da6a4ddad11e6031eb0d549e80e4 \
-    --hash=sha256:2de4b92baf97e20792c27a0e3663219512b3048dd9acc329370c196241c3b93a \
-    --hash=sha256:3176fdda86968478a6e9d9ffa8a3bb979356fbee29b58396cb0490b7eed02fbb \
-    --hash=sha256:3c8befbcf01f230e2102794629d1e4b43fa3950f2830d81dab62ac0f8a819abf \
-    --hash=sha256:3f133ce01caa0910cc445f83c7cafa23881ae8c3dd536e0b8f07adb4cf2cc40d \
-    --hash=sha256:407922924b88c922f2ed411cbe33ef5bbfb657919d6cabb445eb49b12ec3185e \
-    --hash=sha256:770b8318f0f7c3245fcd3aac645140a170dffae984c046ede7958e8865a613f1 \
-    --hash=sha256:9ac3eb3e106bfa9669c9bcfa1e57b17b7444e3d4cfb7c399ec57e919703d7bfd \
-    --hash=sha256:9cf37b0ce03de43d80398703c006bfddbd709f32e8460a9404b27df998d3f747 \
-    --hash=sha256:affc60e6c93fc9d66907dab07e7e7261135e173b36324fe2dc89731adf75cf4d \
-    --hash=sha256:d3d2e53224654711e32a6f808d6a7343a5277cba7ad423b94417874c6f3e80f7 \
-    --hash=sha256:eeb01ffc7b15ffc028155128a060a8fdb191cb63e3ae3b7392ddc4b0951f134b
+obspy==1.4.2 \
+    --hash=sha256:39729b64ea2f712849da7c8a597bf09c6cf4b927cd464a95def36e7f5c603d73 \
+    --hash=sha256:5b2d0e24b6e1149b2a1b6836200401f8d075758b74050d02dd22bd26944b5af7 \
+    --hash=sha256:6454e6870497ecaf022df49449ac941dd090f0359fadea3b5d8d51380a7d6659 \
+    --hash=sha256:87bdde2cce9a12a85b77bd874bfe0d88457e8367aa21c653b78ab6c2e9f68622 \
+    --hash=sha256:940bbdd942d0d4f195b2339a595cfa62a7a9ecd3548dc0bf1932678f2b272b28 \
+    --hash=sha256:99ae83719b749b275a8ca45ee77e8dda7bdf4ab94c443094f2088101e9056322 \
+    --hash=sha256:a6fdd8693e55fada63e9bf36e5cbdfe1ebd231f4723fe1398ed6a7a4ee5de2ad \
+    --hash=sha256:b0374a53605c919aa7f0b9579fcf02eda970520bd34f3550fc95a4b19078429e \
+    --hash=sha256:baf8eaaaf0dc73e6a845c488ba9764dc841a91a7591ac75457e1770bbcb5ca3e \
+    --hash=sha256:c24018ccdebf8cbc170af2dd9a86679f4baf074a7d645bdf017d50e3198baa8f \
+    --hash=sha256:c249acc171d00bac9ccc9951a620c4fcb9102de4d58c4cba07ee14dc210f8ce1 \
+    --hash=sha256:c65ca136af1b5f7ef7a613798f2bae333aa241fd3ef83e35b4de3c841961a3cf \
+    --hash=sha256:d7d8517646536ea023fe5a059054b656ee6ee1cc5475fe28d2541ee2c8bbe36e \
+    --hash=sha256:dd93a17cda32be057937b551f096df07def6aa61ccf26558ce9cd1866a70397c \
+    --hash=sha256:de8ec55a21eaff05618b697b732fb087d155be3daaff8b16e0eed2d773281b53 \
+    --hash=sha256:eac821a3ff45e52b4a11899b8d1c052e9013e97b6a21c2be7130a78f56f64768
     # via
     #   -r requirements/main.in
     #   esi-utils-time
@@ -1276,7 +1276,7 @@ pycparser==2.22 \
     --hash=sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6 \
     --hash=sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc
     # via cffi
-pydantic==2.11.7 \
+pydantic[email]==2.11.7 \
     --hash=sha256:d989c3c6cb79469287b1569f7447a17848c998458d49ebe294e975b9baf0f0db \
     --hash=sha256:dde5df002701f6de26248661f6835bbe296a47bf73990135c7d07ce741b9623b
     # via
@@ -1395,10 +1395,12 @@ pydantic-settings==2.10.1 \
     # via
     #   -r requirements/main.in
     #   safir
-pyjwt==2.10.1 \
+pyjwt[crypto]==2.10.1 \
     --hash=sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953 \
     --hash=sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb
-    # via gidgethub
+    # via
+    #   gidgethub
+    #   pyjwt
 pynacl==1.5.0 \
     --hash=sha256:06b8f6fa7f5de8d5d2f7573fe8c863c051225a27b61e6860fd047b1775807858 \
     --hash=sha256:0c84947a22519e013607c9be43706dd42513f9e6ae5d39d3613ca1e142fba44d \
@@ -1670,7 +1672,7 @@ rpds-py==0.27.0 \
     # via
     #   jsonschema
     #   referencing
-safir==12.0.0 \
+safir[redis]==12.0.0 \
     --hash=sha256:12dc2443c664318479db951ac5481bdfe698e8a884c40fc63b41adc55cd92468 \
     --hash=sha256:d0f81414650507bf9d9589b74eecef92fe55ac32d90376abce43308af4ac3483
     # via -r requirements/main.in
@@ -1743,10 +1745,6 @@ sentry-sdk==2.35.0 \
     --hash=sha256:5ea58d352779ce45d17bc2fa71ec7185205295b83a9dbb5707273deb64720092 \
     --hash=sha256:6e0c29b9a5d34de8575ffb04d289a987ff3053cf2c98ede445bea995e3830263
     # via safir
-setuptools==80.9.0 \
-    --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922 \
-    --hash=sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
-    # via obspy
 shapely==2.1.1 \
     --hash=sha256:04e4c12a45a1d70aeb266618d8cf81a2de9c4df511b63e105b90bfdfb52146de \
     --hash=sha256:0c062384316a47f776305ed2fa22182717508ffdeb4a56d0ff4087a77b2a0f6d \
@@ -1869,12 +1867,15 @@ typing-extensions==4.14.1 \
     --hash=sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76
     # via
     #   aiokafka
+    #   anyio
     #   beautifulsoup4
     #   dataclasses-avroschema
     #   fastapi
     #   faststream
     #   pydantic
     #   pydantic-core
+    #   referencing
+    #   starlette
     #   typing-inspection
 typing-inspection==0.4.1 \
     --hash=sha256:389055682238f53b04f7badcb49b989835495a96700ced5dab2d8feae4b26f51 \
