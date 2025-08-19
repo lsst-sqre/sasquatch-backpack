@@ -144,9 +144,29 @@ class USGSSource(DataSource):
             ) from ce
 
     def assemble_schema(
-        self, namespace: str, record: dict = dict()
+        self, namespace: str, record: dict | None = None
     ) -> AvroBaseModel:
-        if record == {}:
+        """
+        Assembles an avro schema from provided records data
+        (likely recieved from get_records). If record data is ommitted,
+        provides a sample schema consisting of boilerplate data.
+
+        Parameters
+        ----------
+        namespace: str
+            Current namespace, likely recieved from a DispatcherConfig object.
+        record: dict | None
+            Record to assemble. Likely a list member returned from get_records.
+            If ommitted or None, boilerplate data will be used to assemble the
+            returned schema
+
+        Return
+        ------
+        AvroBaseModel
+            Assembled Avro schema. Can then be serialized and published to a
+            schema registry.
+        """
+        if record is None:
             schema = {
                 "timestamp": 1,
                 "id": "default",
@@ -157,13 +177,14 @@ class USGSSource(DataSource):
                 "namespace": namespace,
             }
         else:
+            record_val: dict = record["value"]
             schema = {
-                "timestamp": record["timestamp"],
-                "id": record["id"],
-                "latitude": record["latitude"],
-                "longitude": record["longitude"],
-                "depth": record["depth"],
-                "magnitude": record["magnitude"],
+                "timestamp": record_val["timestamp"],
+                "id": record_val["id"],
+                "latitude": record_val["latitude"],
+                "longitude": record_val["longitude"],
+                "depth": record_val["depth"],
+                "magnitude": record_val["magnitude"],
                 "namespace": namespace,
             }
         return EarthquakeSchema.parse_obj(data=schema)

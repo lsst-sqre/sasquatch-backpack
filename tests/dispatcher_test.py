@@ -31,16 +31,17 @@ class TestSource(sasquatch.DataSource):
         self.records = current_records
 
     def assemble_schema(
-        self, namespace: str, record: dict = {}
+        self, namespace: str, record: dict | None = None
     ) -> AvroBaseModel:
-        if record == {}:
+        if record is None:
             schema = {
                 "id": "default",
                 "namespace": namespace,
             }
         else:
+            record_val: dict = record["value"]
             schema = {
-                "id": record["id"],
+                "id": record_val["id"],
                 "namespace": namespace,
             }
         return TestSchema.parse_obj(data=schema)

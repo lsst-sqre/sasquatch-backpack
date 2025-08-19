@@ -46,7 +46,9 @@ class DataSource(ABC):
         self.uses_redis = uses_redis
 
     @abstractmethod
-    def assemble_schema(self, namespace: str, records: dict) -> AvroBaseModel:
+    def assemble_schema(
+        self, namespace: str, records: dict | None = None
+    ) -> AvroBaseModel:
         pass
 
     @abstractmethod
@@ -180,7 +182,7 @@ async def _dispatch(
 
     for record in records:
         avro: bytes = await schema_manager.serialize(
-            source.assemble_schema(namespace, record["value"])
+            source.assemble_schema(namespace, record)
         )
         headers = {
             "content-type": "avro",
