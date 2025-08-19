@@ -79,10 +79,6 @@ Use this as an opportunity to debug your commands so they work as intended befor
 Add Schemas
 ===========
 
-.. warning ::
-
-    Sasquatch-backpack version 0.4.0 does not support non-json schemas in its default publishing method. Support is planned, but in the meantime either opt to use the old publish method (PublishMethod.REST_API), or serialize any schema data to json before publishing.
-
 `Sasquatch <https://sasquatch.lsst.io>`__ (the wearer of the proverbial backpack), uses `Avro schemas <https://sasquatch.lsst.io/user-guide/avro.html>`__ for data serialization.
 Navigate to your Datasource's folder and create a ``schemas.py`` file for your Datasource.
 Inside, use `pydantic's AvroBaseModel <https://marcosschroh.github.io/dataclasses-avroschema/pydantic/>`__ to create an avro schema.
@@ -104,7 +100,7 @@ Below is a quick sample of usage.
         class Meta:
             """Schema metadata."""
 
-            namespace = "$namespace"
+            namespace = "Default"
             schema_name = "topic_name_goes_here"
 
 Make one such schema for each command or API call you wish to make.
@@ -128,7 +124,7 @@ While not required, giving each entry a unique ID is strongly reccommended to id
 Note 3: Meta
 ------------
 The Meta subclass is required, and must contain both namespace and schema_name values.
-The namespace will be replaced with its actual value later on when the file is parsed, so simply keep its value as shown above, in "$thing" format.
+The namespace will be replaced with its actual value later on when the file is parsed, so simply keep its value "Default" as shown above.
 The schema_name, on the other hand, should be hardcoded in.
 
 Add Configs
@@ -161,7 +157,7 @@ Add Datasources
 ===============
 Now you're finally ready to add Datasources.
 From within your ``scripts.py`` file, for each command you have, make a new Datasource class inheriting from ``sasquatchbackpack.sasquatch.Datasource``.
-These new classes will require two methods: ``get_records()`` and ``get_redis_key()``.
+These new classes will require three methods: ``get_records()``, ``assemble_schema()`` and ``get_redis_key()``.
 
 ``get_records()`` should call the Datasource's respective ``scripts.py`` function, then return the encoded results in an array.
 This should be surrounded with a "try" like so:
@@ -178,6 +174,31 @@ This should be surrounded with a "try" like so:
             raise ConnectionError(
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
+
+``assemble_schema()`` should take one of the list items obtained by get records (or None), and the namespace. This is where that default value above is substituted. This function has two purposes. One is to create a full schema object from a provided record and the other is to provide a compliant boilerplate schema if not provided a record. This is achieved like so:
+
+.. code-block:: python
+
+    def assemble_schema(self, namespace: str, record:dict | None = None) -> AvroBaseModel:
+        """Docstring: the third"""
+        if record is None:
+            schema = {
+                "timestamp": 1,
+                "id": "default",
+                # Every object in the schema needs to be here, and provided with a boiler plate values
+                #eg: "percentage":1.0,
+                "namespace"=namespace,
+            }
+        else:
+            schema = {
+                "timestamp": record["timestamp"],
+                "id": record["id"],
+                # Again, Every object in the schema needs to be here, and provided with its record value.
+                #eg: "percentage":record["percentage"]
+                "namespace": namespace,
+            }
+
+        return CommandnameSchema.parse_obj(data=schema)
 
 ``get_redis_key()`` can safely return an empty string if your config has set uses_redis to false, and you don't intend to integrate this souce with backpack's redis instance.
 Otherwise, this method should return a unique string structured as such: ``f"{self.topic_name}:uniqueItemIdentifierHere"``.

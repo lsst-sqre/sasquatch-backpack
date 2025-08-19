@@ -19,5 +19,5 @@ class EarthquakeSchema(AvroBaseModel):
     class Meta:
         """Schema metadata."""
 
-        namespace = "$namespace"
+        namespace = "Default"
         schema_name = "usgsEarthquakeData"

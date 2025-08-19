@@ -12,16 +12,21 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import StrEnum
-from string import Template
 
 import nest_asyncio
 import redis.asyncio as redis
 import requests
+from dataclasses_avroschema.pydantic import AvroBaseModel
 from faststream import FastStream
 from faststream.kafka import KafkaBroker
 from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
 from pydantic import ValidationError
-from safir.kafka import KafkaConnectionSettings
+from safir.kafka import (
+    KafkaConnectionSettings,
+    PydanticSchemaManager,
+    SchemaInfo,
+    SchemaManagerSettings,
+)
 
 # Code yoinked from https://github.com/lsst-sqre/
 # sasquatch/blob/main/examples/RestProxyAPIExample.ipynb
@@ -36,12 +41,15 @@ class DataSource(ABC):
         Specific source name, used as an identifier
     """
 
-    def __init__(
-        self, topic_name: str, schema: str, *, uses_redis: bool
-    ) -> None:
+    def __init__(self, topic_name: str, *, uses_redis: bool) -> None:
         self.topic_name = topic_name
-        self.schema = schema
         self.uses_redis = uses_redis
+
+    @abstractmethod
+    def assemble_schema(
+        self, namespace: str, records: dict | None = None
+    ) -> AvroBaseModel:
+        pass
 
     @abstractmethod
     def get_records(self) -> list[dict]:
@@ -62,6 +70,7 @@ class RedisManager:
     """
 
     def __init__(self, address: str) -> None:
+        nest_asyncio.apply()
         self.address = address
         self.model = redis.from_url(self.address)
 
@@ -132,6 +141,8 @@ class PublishMethod(StrEnum):
 try:
     kafka_config = KafkaConnectionSettings()
     kafka_broker = KafkaBroker(**kafka_config.to_faststream_params())
+    schema_config = SchemaManagerSettings()
+    manager = schema_config.make_manager()
     app = FastStream(kafka_broker)
 except ValidationError:
     pass
@@ -139,8 +150,12 @@ except ValidationError:
 
 async def _dispatch(
     records: list[dict],
+    schema: AvroBaseModel,
     broker: KafkaBroker,
+    schema_manager: PydanticSchemaManager,
     publisher: AsyncAPIDefaultPublisher,
+    source: DataSource,
+    namespace: str,
 ) -> Exception | None:
     """Connect to a kafka server and publish records.
 
@@ -163,10 +178,17 @@ async def _dispatch(
     except Exception as e:
         return e
 
-    await publisher.publish(
-        records,
-        headers={"content-type": "application/json"},
-    )
+    info: SchemaInfo = await schema_manager.register_model(type(schema))
+
+    for record in records:
+        avro: bytes = await schema_manager.serialize(
+            source.assemble_schema(namespace, record)
+        )
+        headers = {
+            "content-type": "avro",
+            "schema-id": str(info.schema_id),
+        }
+        await publisher.publish(avro, headers=headers)
     return None
 
 
@@ -191,14 +213,12 @@ class BackpackDispatcher:
         source: DataSource,
         redis_address: str = "default",
         broker_in: KafkaBroker | None = None,
+        manager_in: PydanticSchemaManager | None = None,
     ) -> None:
         self.source = source
         self.config = DispatcherConfig()
-        self.schema = Template(source.schema).substitute(
-            {
-                "namespace": self.config.namespace,
-            }
-        )
+
+        self.schema = self.source.assemble_schema(self.config.namespace)
         nest_asyncio.apply()
         self.redis = RedisManager(
             self.config.redis_address
@@ -211,8 +231,18 @@ class BackpackDispatcher:
             self.broker = broker_in if broker_in is not None else local_broker
         except NameError:
             if broker_in is None:
-                raise ValueError from None
+                raise ValueError("Kafka environment variables unset") from None
             self.broker = broker_in
+
+        try:
+            local_schema_manager = manager
+            self.manager = (
+                manager_in if manager_in is not None else local_schema_manager
+            )
+        except NameError:
+            if manager_in is None:
+                raise ValueError("Schema environment variable unset") from None
+            self.manager = manager_in
 
     def create_topic(self) -> str:
         """Create kafka topic based off data from provided source.
@@ -355,7 +385,15 @@ class BackpackDispatcher:
         )
 
         result: Exception | None = asyncio.run(
-            _dispatch(processed_records, self.broker, prepared_publisher)
+            _dispatch(
+                processed_records,
+                self.schema,
+                self.broker,
+                self.manager,
+                prepared_publisher,
+                self.source,
+                self.config.namespace,
+            )
         )
 
         if result is not None:

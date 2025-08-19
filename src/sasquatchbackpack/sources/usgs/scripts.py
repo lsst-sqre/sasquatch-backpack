@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
+from dataclasses_avroschema.pydantic import AvroBaseModel
 from libcomcat.search import search
 
 from sasquatchbackpack.sasquatch import DataSource
@@ -99,9 +100,7 @@ class USGSSource(DataSource):
         self,
         config: USGSConfig,
     ) -> None:
-        super().__init__(
-            config.topic_name, config.schema, uses_redis=config.uses_redis
-        )
+        super().__init__(config.topic_name, uses_redis=config.uses_redis)
         self.duration = config.duration
         self.config = config
         self.radius = config.radius
@@ -143,6 +142,52 @@ class USGSSource(DataSource):
             raise ConnectionError(
                 f"A connection error occurred while fetching records: {ce}"
             ) from ce
+
+    def assemble_schema(
+        self, namespace: str, record: dict | None = None
+    ) -> AvroBaseModel:
+        """
+        Assembles an avro schema from provided records data
+        (likely recieved from get_records). If record data is ommitted,
+        provides a sample schema consisting of boilerplate data.
+
+        Parameters
+        ----------
+        namespace: str
+            Current namespace, likely recieved from a DispatcherConfig object.
+        record: dict | None
+            Record to assemble. Likely a list member returned from get_records.
+            If ommitted or None, boilerplate data will be used to assemble the
+            returned schema
+
+        Return
+        ------
+        AvroBaseModel
+            Assembled Avro schema. Can then be serialized and published to a
+            schema registry.
+        """
+        if record is None:
+            schema = {
+                "timestamp": 1,
+                "id": "default",
+                "latitude": 1.0,
+                "longitude": 1.0,
+                "depth": 1.0,
+                "magnitude": 1.0,
+                "namespace": namespace,
+            }
+        else:
+            record_val: dict = record["value"]
+            schema = {
+                "timestamp": record_val["timestamp"],
+                "id": record_val["id"],
+                "latitude": record_val["latitude"],
+                "longitude": record_val["longitude"],
+                "depth": record_val["depth"],
+                "magnitude": record_val["magnitude"],
+                "namespace": namespace,
+            }
+        return EarthquakeSchema.parse_obj(data=schema)
 
     def get_redis_key(self, datapoint: dict) -> str:
         """Allow USGS API to format its own redis keys.
