@@ -6,7 +6,7 @@
 #
 # After editing, update requirements/main.txt by running:
 #     make update-deps
-obspy==1.4.1
+obspy
 requests
 pydantic
 pydantic-settings

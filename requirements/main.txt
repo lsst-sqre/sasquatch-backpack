@@ -723,9 +723,9 @@ invoke==2.2.0 \
     --hash=sha256:6ea924cc53d4f78e3d98bc436b08069a03077e6f85ad1ddaa8a116d7dad15820 \
     --hash=sha256:ee6cbb101af1a859c7fe84f2a264c059020b0cb7fe3535f9424300ab568f6bd5
     # via paramiko
-jsonschema==4.25.0 \
-    --hash=sha256:24c2e8da302de79c8b9382fee3e76b355e44d2a4364bb207159ce10b517bd716 \
-    --hash=sha256:e63acf5c11762c0e6672ffb61482bdf57f0876684d8d249c0fe2d730d48bc55f
+jsonschema==4.25.1 \
+    --hash=sha256:3fba0169e345c7175110351d456342c364814cfcf3b964ba4587f22915230a63 \
+    --hash=sha256:e4a9655ce0da0c0b67a085847e00a3a51449e1157f4f75e9fb5aa545e122eb85
     # via python-schema-registry-client
 jsonschema-specifications==2025.4.1 \
     --hash=sha256:4653bffbd6584f7de83a67e0d620ef16900b390ddc7939d56684d6c81e33f1af \
@@ -1078,23 +1078,23 @@ numpy==2.3.2 \
     #   scipy
     #   shapely
     #   usgs-libcomcat
-obspy==1.4.1 \
-    --hash=sha256:05256048d3df93936992370fdd6f1d6c1e55fbb52604e47481a42a0dde1d77c0 \
-    --hash=sha256:09e0faecb206231d7395e975371ac66f00d564e2fea3e957274181b8d1c06548 \
-    --hash=sha256:20fcbeb061d03f17b73235518f3372f400058245fe9a7ecfa325eb166d263076 \
-    --hash=sha256:2275962307055bfd0d6c875b12edb810a731f9ea4943e0c9d4c2eb26d45ada39 \
-    --hash=sha256:2355082a07b2539005364e12fe6a3ed030c7da6a4ddad11e6031eb0d549e80e4 \
-    --hash=sha256:2de4b92baf97e20792c27a0e3663219512b3048dd9acc329370c196241c3b93a \
-    --hash=sha256:3176fdda86968478a6e9d9ffa8a3bb979356fbee29b58396cb0490b7eed02fbb \
-    --hash=sha256:3c8befbcf01f230e2102794629d1e4b43fa3950f2830d81dab62ac0f8a819abf \
-    --hash=sha256:3f133ce01caa0910cc445f83c7cafa23881ae8c3dd536e0b8f07adb4cf2cc40d \
-    --hash=sha256:407922924b88c922f2ed411cbe33ef5bbfb657919d6cabb445eb49b12ec3185e \
-    --hash=sha256:770b8318f0f7c3245fcd3aac645140a170dffae984c046ede7958e8865a613f1 \
-    --hash=sha256:9ac3eb3e106bfa9669c9bcfa1e57b17b7444e3d4cfb7c399ec57e919703d7bfd \
-    --hash=sha256:9cf37b0ce03de43d80398703c006bfddbd709f32e8460a9404b27df998d3f747 \
-    --hash=sha256:affc60e6c93fc9d66907dab07e7e7261135e173b36324fe2dc89731adf75cf4d \
-    --hash=sha256:d3d2e53224654711e32a6f808d6a7343a5277cba7ad423b94417874c6f3e80f7 \
-    --hash=sha256:eeb01ffc7b15ffc028155128a060a8fdb191cb63e3ae3b7392ddc4b0951f134b
+obspy==1.4.2 \
+    --hash=sha256:39729b64ea2f712849da7c8a597bf09c6cf4b927cd464a95def36e7f5c603d73 \
+    --hash=sha256:5b2d0e24b6e1149b2a1b6836200401f8d075758b74050d02dd22bd26944b5af7 \
+    --hash=sha256:6454e6870497ecaf022df49449ac941dd090f0359fadea3b5d8d51380a7d6659 \
+    --hash=sha256:87bdde2cce9a12a85b77bd874bfe0d88457e8367aa21c653b78ab6c2e9f68622 \
+    --hash=sha256:940bbdd942d0d4f195b2339a595cfa62a7a9ecd3548dc0bf1932678f2b272b28 \
+    --hash=sha256:99ae83719b749b275a8ca45ee77e8dda7bdf4ab94c443094f2088101e9056322 \
+    --hash=sha256:a6fdd8693e55fada63e9bf36e5cbdfe1ebd231f4723fe1398ed6a7a4ee5de2ad \
+    --hash=sha256:b0374a53605c919aa7f0b9579fcf02eda970520bd34f3550fc95a4b19078429e \
+    --hash=sha256:baf8eaaaf0dc73e6a845c488ba9764dc841a91a7591ac75457e1770bbcb5ca3e \
+    --hash=sha256:c24018ccdebf8cbc170af2dd9a86679f4baf074a7d645bdf017d50e3198baa8f \
+    --hash=sha256:c249acc171d00bac9ccc9951a620c4fcb9102de4d58c4cba07ee14dc210f8ce1 \
+    --hash=sha256:c65ca136af1b5f7ef7a613798f2bae333aa241fd3ef83e35b4de3c841961a3cf \
+    --hash=sha256:d7d8517646536ea023fe5a059054b656ee6ee1cc5475fe28d2541ee2c8bbe36e \
+    --hash=sha256:dd93a17cda32be057937b551f096df07def6aa61ccf26558ce9cd1866a70397c \
+    --hash=sha256:de8ec55a21eaff05618b697b732fb087d155be3daaff8b16e0eed2d773281b53 \
+    --hash=sha256:eac821a3ff45e52b4a11899b8d1c052e9013e97b6a21c2be7130a78f56f64768
     # via
     #   -r requirements/main.in
     #   esi-utils-time
@@ -1504,9 +1504,9 @@ referencing==0.36.2 \
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.4 \
-    --hash=sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c \
-    --hash=sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422
+requests==2.32.5 \
+    --hash=sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6 \
+    --hash=sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf
     # via
     #   -r requirements/main.in
     #   esi-utils-geo
