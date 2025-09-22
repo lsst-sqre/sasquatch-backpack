@@ -23,10 +23,12 @@ class TestSchema(AvroBaseModel):
 
 
 class TestSource(sasquatch.DataSource):
-    def __init__(self, current_records: list[dict[str, str]]) -> None:
+    def __init__(
+        self, current_records: list[dict[str, str]], *, redis: bool = True
+    ) -> None:
         super().__init__(
             "test",
-            uses_redis=True,
+            uses_redis=redis,
         )
         self.records = current_records
 
@@ -63,25 +65,55 @@ def test_get_source_records(
         kafka_broker,
         schema_manager,
     )
-    dispatcher.redis.store("test:abc123")
 
-    # Ensure item was successfully added
-    result = dispatcher.redis.get("test:abc123")
-    assert result is not None
-
-    assert dispatcher._get_source_records() == [{"value": {"id": "123abc"}}]
+    assert dispatcher._get_source_records() == [
+        {
+            "value": {
+                "id": "abc123",
+            },
+        },
+        {
+            "value": {
+                "id": "123abc",
+            },
+        },
+    ]
 
 
 def test_publish(
     kafka_broker: KafkaBroker, schema_manager: PydanticSchemaManager
 ) -> None:
-    source = TestSource([{"id": "abc123"}, {"id": "123abc"}])
+    source = TestSource([{"id": "abc321"}])
     dispatcher = sasquatch.BackpackDispatcher(
         source,
         "redis://localhost:" + os.environ["REDIS_6379_TCP_PORT"] + "/0",
         kafka_broker,
         schema_manager,
     )
-    result, items = dispatcher.publish()
+    result = dispatcher.publish()
+    # Ensure clean run
+    assert "Error" not in result[0]
 
-    assert "Error" not in result
+    # Ensure item was successfully added to redis
+    redis = dispatcher.redis.get("test:abc321")
+    assert redis is not None
+
+
+def test_redis_off(
+    kafka_broker: KafkaBroker, schema_manager: PydanticSchemaManager
+) -> None:
+    source = TestSource([{"id": "cba321"}], redis=False)
+    dispatcher = sasquatch.BackpackDispatcher(
+        source,
+        "redis://localhost:" + os.environ["REDIS_6379_TCP_PORT"] + "/0",
+        kafka_broker,
+        schema_manager,
+    )
+    result = dispatcher.publish()
+
+    # Ensure clean run
+    assert "Error" not in result[0]
+
+    # Ensure item was not added to redis
+    redis = dispatcher.redis.get("test:cba321")
+    assert redis is None
