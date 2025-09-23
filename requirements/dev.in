@@ -19,6 +19,7 @@ pytest-asyncio
 pytest-cov
 ruff
 safir[testcontainers]
+safir[kafka]
 
 # Documentation
 documenteer[guide]
