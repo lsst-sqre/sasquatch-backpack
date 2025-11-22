@@ -19,7 +19,7 @@ import requests
 from dataclasses_avroschema.pydantic import AvroBaseModel
 from faststream import FastStream
 from faststream.kafka import KafkaBroker
-from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
+from faststream.kafka.publisher import DefaultPublisher
 from pydantic import ValidationError
 from safir.kafka import (
     KafkaConnectionSettings,
@@ -153,7 +153,7 @@ async def _dispatch(
     schema: AvroBaseModel,
     broker: KafkaBroker,
     schema_manager: PydanticSchemaManager,
-    publisher: AsyncAPIDefaultPublisher,
+    publisher: DefaultPublisher,
     source: DataSource,
     namespace: str,
 ) -> Exception | None:
