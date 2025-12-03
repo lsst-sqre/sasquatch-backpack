@@ -1,44 +1,47 @@
 """Backpack FastAPI module."""
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from sasquatchbackpack.sources.usgs.commands import usgs_earthquake_data
 
 app = FastAPI()
 
 
-@app.get(
-    "/sources/usgs/earthquake_data/{days}/{hours}/{radius}/{latitude}/{longitude}/{lower}/{upper}/{publish}/{method}"
-)
-async def read_item(
-    days: int,
-    hours: int,
-    radius: int,
-    latitude: int,
-    longitude: int,
-    lower: int,
-    upper: int,
-    publish: bool,  # noqa: FBT001
-    method: str,
-) -> None:
+class EarthquakeParams(BaseModel):
+    """{days}/{hours}/{radius}/{latitude}/{longitude}/{lower}/{upper}/{publish}/{method}."""
+
+    days: int
+    hours: int
+    radius: int
+    latitude: int
+    longitude: int
+    lower: int
+    upper: int
+    publish: bool
+    method: str
+
+
+@app.post("/sources/usgs/earthquake_data/")
+async def read_item(params: EarthquakeParams) -> None:
     """Set earthquake_data command."""
     args = [
         "-d",
-        f"{days}",
-        f"{hours}",
+        f"{params.days}",
+        f"{params.hours}",
         "-r",
-        f"{radius}",
+        f"{params.radius}",
         "-c",
-        f"{latitude}",
-        f"{longitude}",
+        f"{params.latitude}",
+        f"{params.longitude}",
         "-m",
-        f"{lower}",
-        f"{upper}",
+        f"{params.lower}",
+        f"{params.upper}",
         "-pm",
-        method,
+        params.method,
     ]
 
-    if publish:
+    if params.publish:
         args.append("--publish")
 
     ctx = usgs_earthquake_data.make_context("usgs_earthquake_data", args)
