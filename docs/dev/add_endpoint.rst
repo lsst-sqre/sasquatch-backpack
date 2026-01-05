@@ -108,3 +108,20 @@ If the call succeeded, but no data was added as a result, a 200 is recommended.
 
 If the call failed, a 500 is recommended.
 
+
+Testing
+=======
+
+To test if your command works properly, you can run ``fastapi dev src/sasquatchbackpack/fastapi.py``.
+
+Then you can run your command from the commandline like so:
+
+.. code-block:: bash
+
+   curl -X 'POST' \
+      'http://localhost:8000/sources/sourcename/commandname/' \
+      -H 'accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '3'
+
+Or alternatively you can use the fastapi web interface which should be available at `http://127.0.0.1:8000/docs`__.
