@@ -58,7 +58,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 USER appuser
 
 # Expose the port.
-EXPOSE 8080
+EXPOSE 8000
 
 # Run the application.
-CMD ["sasquatchbackpack", "usgs-earthquake-data", "-d", "10", "0"]
+CMD ["uvicorn", "sasquatchbackpack.fastapi:app", "--host", "0.0.0.0", "--port", "8000"]

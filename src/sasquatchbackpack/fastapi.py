@@ -9,6 +9,8 @@ from fastapi import FastAPI, Response
 from sasquatchbackpack.sources.usgs.commands import usgs_earthquake_data
 from sasquatchbackpack.sources.usgs.schemas import EarthquakeRequest
 
+__all__ = ["app"]
+
 app = FastAPI()
 
 
