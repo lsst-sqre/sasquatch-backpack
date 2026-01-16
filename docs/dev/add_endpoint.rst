@@ -124,4 +124,4 @@ Then you can run your command from the commandline like so:
       -H 'Content-Type: application/json' \
       -d '3'
 
-Or alternatively you can use the fastapi web interface which should be available at `http://127.0.0.1:8000/docs`__.
+Or alternatively you can use the fastapi web interface which should be available at ``http://127.0.0.1:8000/docs``.
