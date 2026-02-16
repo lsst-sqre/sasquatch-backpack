@@ -15,3 +15,4 @@ usgs-libcomcat
 safir[redis]
 dataclasses_avroschema[pydantic]
 nest_asyncio
+fastapi[standard]
