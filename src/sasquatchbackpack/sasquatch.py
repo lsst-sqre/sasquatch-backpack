@@ -84,7 +84,7 @@ class RedisManager:
         item : str
             Value that will be stored. Defaults to "value".
         """
-        asyncio.run(self.model.set(key, item))
+        self.model.set(key, item)
 
     def get(self, key: str) -> str | None:
         """Query a key from the provided redis server and return its value.
@@ -99,7 +99,7 @@ class RedisManager:
         str
             Queried value. Returns None if value is not found.
         """
-        return asyncio.run(self.model.get(key))
+        return str(self.model.get(key))
 
 
 @dataclass
