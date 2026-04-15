@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
@@ -43,20 +43,10 @@ jobs:
     strategy:
       matrix:
         python:
-          - "3.12"
+          - "3.13"
 
     steps:
       - uses: actions/checkout@v5
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install extra packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev libldap2-dev libsasl2-dev libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
@@ -107,7 +97,7 @@ jobs:
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           tox-envs: "docs"
           # Add docs-linkcheck when the docs and PyPI package are published
           # tox-envs: "docs,docs-linkcheck"
@@ -141,7 +131,7 @@ jobs:
       - name: Build and publish
         uses: lsst-sqre/build-and-publish-to-pypi@v3
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           upload: false
 
   pypi:
@@ -168,4 +158,4 @@ jobs:
       - name: Build and publish
         uses: lsst-sqre/build-and-publish-to-pypi@v3
         with:
-          python-version: "3.12"
+          python-version: "3.13"
