@@ -51,8 +51,8 @@ jobs:
 
       - name: Install extra packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgdal-dev
+          apt-get update
+          apt-get install -y libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
@@ -99,13 +99,13 @@ jobs:
           fetch-depth: 0 # full history for setuptools_scm
 
       - name: Install Graphviz
-        run: sudo apt-get install graphviz
+        run: apt-get install graphviz
 
 
       - name: Install extra packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgdal-dev
+          apt-get update
+          apt-get install -y libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
