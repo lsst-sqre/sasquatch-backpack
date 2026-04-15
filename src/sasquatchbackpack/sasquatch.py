@@ -19,7 +19,7 @@ import requests
 from dataclasses_avroschema.pydantic import AvroBaseModel
 from faststream import FastStream
 from faststream.kafka import KafkaBroker
-from faststream.kafka.publisher.asyncapi import AsyncAPIDefaultPublisher
+from faststream.kafka.publisher import DefaultPublisher
 from pydantic import ValidationError
 from safir.kafka import (
     KafkaConnectionSettings,
@@ -84,7 +84,7 @@ class RedisManager:
         item : str
             Value that will be stored. Defaults to "value".
         """
-        asyncio.run(self.model.set(key, item))
+        self.model.set(key, item)
 
     def get(self, key: str) -> str | None:
         """Query a key from the provided redis server and return its value.
@@ -99,7 +99,7 @@ class RedisManager:
         str
             Queried value. Returns None if value is not found.
         """
-        return asyncio.run(self.model.get(key))
+        return str(self.model.get(key))
 
 
 @dataclass
@@ -153,7 +153,7 @@ async def _dispatch(
     schema: AvroBaseModel,
     broker: KafkaBroker,
     schema_manager: PydanticSchemaManager,
-    publisher: AsyncAPIDefaultPublisher,
+    publisher: DefaultPublisher,
     source: DataSource,
     namespace: str,
 ) -> Exception | None:

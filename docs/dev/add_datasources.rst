@@ -269,5 +269,11 @@ They're very helpful for giving user feedback in the CLI!
 Test it!
 ========
 Running the CLI command should now result in the data being published to sasquatch!
-Specifically you can search `kafdrop on data-int <https://data-int.lsst.cloud/kafdrop/>`_
+Specifically you can search `kafdrop on data-int <https://data-int.lsst.cloud/kafdrop/>`__
 for the ``lsst.backpack`` topic, and your data should show up there.
+
+Make it an endpoint
+===================
+Backpack also supports revealing datasources as API endpoints.
+To enable this behavior, you can see the `relevant doccumentation <./add_endpoint.html>`__
+

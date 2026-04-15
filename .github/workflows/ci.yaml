@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
@@ -38,15 +38,21 @@ jobs:
   test:
 
     runs-on: ubuntu-latest
+    container: python:3.13-slim-trixie
     timeout-minutes: 10
 
     strategy:
       matrix:
         python:
-          - "3.12"
+          - "3.13"
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Install extra packages
+        run: |
+          apt-get update
+          apt-get install -y libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
@@ -84,6 +90,8 @@ jobs:
   docs:
 
     runs-on: ubuntu-latest
+    container: python:3.13-slim-trixie
+
     timeout-minutes: 10
 
     steps:
@@ -92,12 +100,18 @@ jobs:
           fetch-depth: 0 # full history for setuptools_scm
 
       - name: Install Graphviz
-        run: sudo apt-get install graphviz
+        run: apt-get install graphviz
+
+
+      - name: Install extra packages
+        run: |
+          apt-get update
+          apt-get install -y libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           tox-envs: "docs"
           # Add docs-linkcheck when the docs and PyPI package are published
           # tox-envs: "docs,docs-linkcheck"
@@ -131,7 +145,7 @@ jobs:
       - name: Build and publish
         uses: lsst-sqre/build-and-publish-to-pypi@v3
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           upload: false
 
   pypi:
@@ -158,4 +172,4 @@ jobs:
       - name: Build and publish
         uses: lsst-sqre/build-and-publish-to-pypi@v3
         with:
-          python-version: "3.12"
+          python-version: "3.13"
