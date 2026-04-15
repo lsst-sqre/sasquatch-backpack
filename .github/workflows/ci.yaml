@@ -38,6 +38,7 @@ jobs:
   test:
 
     runs-on: ubuntu-latest
+    container: debian:trixie
     timeout-minutes: 10
 
     strategy:
@@ -89,6 +90,7 @@ jobs:
   docs:
 
     runs-on: ubuntu-latest
+    container: debian:trixie
     timeout-minutes: 10
 
     steps:
