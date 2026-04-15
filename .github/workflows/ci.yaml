@@ -48,6 +48,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Install extra packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgdal-dev
+
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
         with:
@@ -93,6 +98,12 @@ jobs:
 
       - name: Install Graphviz
         run: sudo apt-get install graphviz
+
+
+      - name: Install extra packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
