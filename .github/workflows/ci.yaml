@@ -50,14 +50,15 @@ jobs:
           - "3.13"
 
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Install extra packages
         run: |
           apt-get update
           apt-get install -y libgdal-dev git
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
