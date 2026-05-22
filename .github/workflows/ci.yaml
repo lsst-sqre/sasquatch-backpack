@@ -43,7 +43,7 @@ jobs:
 
     container:
       image: python:3.13-slim-trixie
-      options: --user runner
+      options: --user root
     timeout-minutes: 10
 
     strategy:
@@ -57,6 +57,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y libgdal-dev git
+
 
       - uses: actions/checkout@v6
         with:
