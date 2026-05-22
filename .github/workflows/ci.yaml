@@ -38,6 +38,7 @@ jobs:
   test:
 
     runs-on: ubuntu-latest
+
     container: python:3.13-slim-trixie
     timeout-minutes: 10
 
@@ -59,7 +60,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           tox-envs: "py,coverage-report,typing"
-          tox-requirements: "requirements/tox.txt"
 
   build:
     runs-on: ubuntu-latest
