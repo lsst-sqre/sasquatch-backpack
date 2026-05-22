@@ -58,7 +58,6 @@ jobs:
           apt-get update
           apt-get install -y libgdal-dev git
 
-
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -68,6 +67,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           tox-envs: "py,coverage-report,typing"
+          tox-requirements: "requirements/tox.txt"
 
   build:
     runs-on: ubuntu-latest
