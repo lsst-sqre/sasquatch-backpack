@@ -18,7 +18,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 requires-python = ">=3.12"
-dependencies = ["redis", "setuptools<82", "obspy", "requests", "pydantic", "pydantic-settings", "types-requests", "gdal==3.10.3", "usgs-libcomcat", "safir[redis]", "dataclasses_avroschema[pydantic]", "nest_asyncio", "fastapi[standard]", "cryptography<46"]
+dependencies = ["redis", "setuptools<82", "obspy", "requests", "pydantic", "pydantic-settings", "types-requests", "usgs-libcomcat", "safir[redis]", "dataclasses_avroschema[pydantic]", "nest_asyncio", "fastapi[standard]", "cryptography<46"]
 dynamic = ["version"]
 
 [project.optional-dependencies]
