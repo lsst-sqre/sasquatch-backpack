@@ -56,7 +56,7 @@ jobs:
       - name: Install extra packages
         run: |
           apt-get update
-          apt-get install -y libgdal-dev git
+          apt-get install -y libgdal-dev python3-gdal git
 
       - uses: actions/checkout@v6
         with:
@@ -67,7 +67,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           tox-envs: "py,coverage-report,typing"
-          tox-requirements: "requirements/tox.txt"
 
   build:
     runs-on: ubuntu-latest
@@ -103,18 +102,15 @@ jobs:
     timeout-minutes: 10
 
     steps:
+
+      - name: Install Packages
+        run: |
+          apt-get update
+          apt-get install -y libgdal-dev graphviz
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # full history for setuptools_scm
-
-      - name: Install Graphviz
-        run: apt-get install graphviz
-
-
-      - name: Install extra packages
-        run: |
-          apt-get update
-          apt-get install -y libgdal-dev
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
