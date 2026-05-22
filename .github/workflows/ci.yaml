@@ -55,7 +55,7 @@ jobs:
       - name: Install extra packages
         run: |
           apt-get update
-          apt-get install -y libgdal-dev
+          apt-get install -y libgdal-dev git
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
