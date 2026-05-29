@@ -18,7 +18,7 @@ set -x
 
 # Tell apt-get we're never going to be able to give manual feedback.
 export DEBIAN_FRONTEND=noninteractive
-echo "deb https://deb.debian.org/debian forky main contrib non-free" | sudo tee -a /etc/apt/sources.list
+echo "deb https://deb.debian.org/debian forky main contrib non-free" >> /etc/apt/sources.list
 # Update the package listing, so we know what packages exist.
 apt-get update
 
