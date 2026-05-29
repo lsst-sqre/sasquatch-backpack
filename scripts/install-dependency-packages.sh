@@ -19,6 +19,8 @@ set -x
 # Tell apt-get we're never going to be able to give manual feedback.
 export DEBIAN_FRONTEND=noninteractive
 
+cat /etc/apt/sources.list
+
 # Update the package listing, so we know what packages exist.
 apt-get update
 
