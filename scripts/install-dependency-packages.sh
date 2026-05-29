@@ -18,7 +18,7 @@ set -x
 
 # Tell apt-get we're never going to be able to give manual feedback.
 export DEBIAN_FRONTEND=noninteractive
-
+echo "deb https://deb.debian.org/debian forky main contrib non-free" | sudo tee -a /etc/apt/sources.list
 # Update the package listing, so we know what packages exist.
 apt-get update
 
@@ -27,7 +27,7 @@ apt-get update
 # build-essential: sometimes needed to build Python modules
 # libffi-dev: sometimes needed to build cffi, a cryptography dependency
 apt-get -y install --no-install-recommends build-essential libffi-dev
-apt-get -y install --no-install-recommends -t unstable libgdal-dev python3-gdal
+apt-get -y install --no-install-recommends -t forky libgdal-dev python3-gdal
 
 # Delete cached files we don't need anymore.
 apt-get clean
