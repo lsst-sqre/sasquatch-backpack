@@ -27,7 +27,7 @@ apt-get update
 # build-essential: sometimes needed to build Python modules
 # libffi-dev: sometimes needed to build cffi, a cryptography dependency
 apt-get -y install --no-install-recommends build-essential libffi-dev libgdal-bin python3-gdal
-apt-get -y -t unstable install --no-install-recommends libgdal-bin python3-gdal
+apt-get -y install --no-install-recommends -t unstable libgdal-dev python3-gdal
 
 # Delete cached files we don't need anymore.
 apt-get clean
