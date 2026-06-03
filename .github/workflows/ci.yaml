@@ -49,15 +49,16 @@ jobs:
           - "3.13"
 
     steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Install extra packages
         run: |
           echo "deb [trusted=yes] https://deb.debian.org/debian forky main contrib non-free" >> /etc/apt/sources.list
           apt-get update
-          apt-get install -t forky -y libgdal-dev python3-gdal
+          apt-get install -t forky -y libgdal-dev python3-gdal git
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
