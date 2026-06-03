@@ -51,7 +51,6 @@ jobs:
       - name: Install extra packages
         run: |
           echo "deb [trusted=yes] https://deb.debian.org/debian forky main contrib non-free" | sudo tee -a /etc/apt/sources.list
-          sudo apt-get update
           sudo apt-get install -t forky -y libgdal-dev python3-gdal
 
       - name: Run tox
