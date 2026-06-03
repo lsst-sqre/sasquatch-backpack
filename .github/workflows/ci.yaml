@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
-      image: python:3.13-slim-trixie
+      image: python:3.13-trixie
       options: --user runner
 
     strategy:
