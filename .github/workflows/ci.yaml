@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 10
     container:
       image: python:3.13-slim-trixie
-      options: --user root
+      options: --user runner
 
     strategy:
       matrix:
