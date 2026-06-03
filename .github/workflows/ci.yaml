@@ -39,6 +39,9 @@ jobs:
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    container:
+      image: python:3.13-slim-trixie
+      options: --user root
 
     strategy:
       matrix:
