@@ -48,6 +48,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Install extra packages
+        run: |
+          echo "deb https://deb.debian.org/debian forky main contrib non-free" >> /etc/apt/sources.list
+          sudo apt-get update
+          sudo apt-get install -t forky -y libgdal-dev python3-gdal
+
       - name: Run tox
         uses: lsst-sqre/run-tox@v1
         with:
