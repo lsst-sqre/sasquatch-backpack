@@ -23,14 +23,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Use the oldest supported version of Python to update dependencies,
-      # not the matrixed Python version, since this accurately reflects
-      # how dependencies should later be updated.
-      - name: Run neophile
-        uses: lsst-sqre/run-neophile@v1
-        with:
-          python-version: "3.12"
-          mode: update
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Update dependencies
+        run: make update-deps
 
       - name: Run tests in tox
         uses: lsst-sqre/run-tox@v1
