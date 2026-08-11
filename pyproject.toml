@@ -18,9 +18,37 @@ classifiers = [
     "Typing :: Typed",
 ]
 requires-python = ">=3.12"
-# Use requirements/main.in for runtime dependencies instead.
-dependencies = ["redis"]
+dependencies = ["redis", "setuptools<82", "obspy", "requests", "pydantic", "pydantic-settings", "types-requests", "usgs-libcomcat", "safir[redis]", "dataclasses_avroschema[pydantic]", "nest_asyncio", "fastapi[standard]", "cryptography<46"]
 dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "coverage[toml]",
+    "mypy",
+    "pre-commit",
+    "pydantic",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
+    "safir[testcontainers]",
+    "safir[kafka]",
+    "documenteer[guide]",
+    "sphinx_click",
+    "scriv"
+]
+
+[dependency-groups]
+tox = [
+    "tox",
+    "tox-docker",
+    "tox-uv"
+]
+lint = [
+    "pre-commit",
+    "pre-commit-uv",
+    "ruff>=0.12",
+]
 
 [project.scripts]
 sasquatchbackpack = "sasquatchbackpack.cli:main"
@@ -30,7 +58,7 @@ Homepage = "https://sasquatch-backpack.lsst.io"
 Source = "https://github.com/lsst-sqre/sasquatch-backpack"
 
 [build-system]
-requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61,<82", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
