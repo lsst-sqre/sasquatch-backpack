@@ -84,6 +84,10 @@ jobs:
   docs:
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
     timeout-minutes: 10
 
     steps:
@@ -102,17 +106,15 @@ jobs:
           # Add docs-linkcheck when the docs and PyPI package are published
           # tox-envs: "docs,docs-linkcheck"
 
-      # Only attempt documentation uploads for tagged releases and pull
-      # requests from ticket branches in the same repository.  This avoids
-      # version clutter in the docs and failures when a PR doesn't have access
-      # to secrets.
-      - name: Upload to LSST the Docs
-        uses: lsst-sqre/ltd-upload@v1
+      - name: Upload to Docverse
+        uses: lsst-sqre/docverse-upload@v1
         with:
+          org: rubin
           project: "sasquatch-backpack"
           dir: "docs/_build/html"
-          username: ${{ secrets.LTD_USERNAME }}
-          password: ${{ secrets.LTD_PASSWORD }}
+          token: ${{ secrets.DOCVERSE_TOKEN }}
+          github-token: ${{ github.token }}
+          comment-on-pr: "true"
         if: >
           github.event_name != 'merge_group'
           && (github.event_name != 'pull_request'
